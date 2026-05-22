@@ -1,0 +1,81 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: clinic-system
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&useUnicode=true&createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:12345678}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  web:
+    resources:
+      static-locations: file:frontend/,classpath:/static/
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:} root
+    password: ${MAIL_PASSWORD:} 12345678
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:true}
+
+app:
+  jwt:
+    expiration-hours: 24
+  password-reset:
+    token-expiration-minutes: 30
+
+# JWT RSA keys - override via environment variables in production
+RSA_PRIVATE_KEY: |
+  -----BEGIN PRIVATE KEY-----
+  MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCquX07up0HbwrT
+  3bdNe12ippJ95+Gsc3Ajx6a7M2xDiPX9vq1Mj+Iv1nLTlghO1wK8FbCy7cMbiSOs
+  StnC4724fIpal8ODCBSu/VoEKuXxVNyArUbtI4aTpd2pb4C+KQJoWCfYvrXEvNn7
+  /VP4QhCQQGVXdPT3U9mqWppe0Htfn4RjVSzJVhd+V+loGtWaiMZgy3l9UiIpb4T9
+  bXJ6oBxBAZf/YkF6oy90RuZ9+j6I1giY808i+53KByETsTkDYYRVe8KRaTTJOwDh
+  NgirV5QfcLeTcANmeay3/vehF4AiaDqTqAtuBV9iYKBOZC7knmb15qdowbNeFMM8
+  wuGQTX5DAgMBAAECggEAEJFfreQ2SPplupnRqBtIwvgXT1CpferV/yLo81HSN9ua
+  w701ZDCyaqINEquEsuH6yfXw5+xa+tkcNSQubdNcHgM4CgKgXp7yIulDSxQ+rGTn
+  4TTvpSPFc56tHDxN6iZgrW+grlATo7wQC3xSIc2HffhB3XLkMvxYK0gPoxPoZScV
+  LyKQ3wuCMAy7/CPnjlvlFJhOJVw/BKoHKiDk0OeqGKR6pGGK1nyG0JLqfMFbmdB6
+  OuHMTPSjtTXv8ZchKKmZ7AwVwz3VKYAOj3QQRFHNbYm3tGCEIcrn+QkOjKTbkv9z
+  SclRNo1+dcpIf8pKFh1+v+VgQJ+yGETB85RTC5gvQQKBgQDfgVuzeBoLcn/N+gf5
+  0eRhe4r63dDgQ0yMqdoVIU5Ga9JbpA7cwbBHj3Zt9Zz/NHpcHkyWINRgEjChUot+
+  qQ1FvQeIIsPLG8SqxLKppU5gUxvs5YYavde7yI8HOH/cG+c7y5CZLwVxJxhTmtG7
+  vaoRYa/LBZQHdEGIGE9pYgJVdwKBgQDDi69pJt/m3yC4NwOTPWTRt08yZmmTAm59
+  Jn3VEK+9/dDA/cYPtcEaPpYQNr2Dyl9gBuL40Stmigu+41FpNsvt3XHmvG2wOaZQ
+  VbnNdV53IBbBGH2xLfwImwdNPaCl9pqA0y047t7iL1aJenauYt2Y/A7s4/xLT6CV
+  77XcAgxAlQKBgGGuBUfAO5G5LsX0ejviUW+RMMJG4xzADNqE+Py3G6CHSt4mKyCr
+  vcDooBeaekzGwJs12r7aBjcefAZlLvXiKBzMalhC6VMBBcikQnkF9+T9LX0xKpTR
+  V1GIa4n6VVb7Eun9I2rvM++p6GXRicwFLih+ivetrm47jtBN35bs8JwtAoGAW8Vh
+  pELHT82lyG6hMefdOgMCmw+vOnwoqHl5EpaLM+o7n2c6HcNaBdwbhy55kLFYQ3PX
+  75gS+0OMMaDzYyKBYHfN7dC+1baolAk3cvJDTDr2EtdQneeL4eoH6jsi+uCaMB1r
+  ms2YMqSuw0SDEGJ7x0F8K7bvf9S188gVHFSltWUCgYBQioQUAruv3AyNI9kg5ai/
+  QS5jgS59bY0v8n8JL4mvzYMqnHJxEE/oNW092T1Ct5rZEGesChIf5M5evb3n9MCz
+  fbkaKT0PFxEezjGagR/hSwMVZ/19aG7i4hqx83LwAN18WO/SYUjn6lh5bSmeT1Ye
+  GcSUCBIUWi7/pD0OhgFkhA==
+  -----END PRIVATE KEY-----
+RSA_PUBLIC_KEY: |
+  -----BEGIN PUBLIC KEY-----
+  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqrl9O7qdB28K0923TXtd
+  oqaSfefhrHNwI8emuzNsQ4j1/b6tTI/iL9Zy05YITtcCvBWwsu3DG4kjrErZwuO9
+  uHyKWpfDgwgUrv1aBCrl8VTcgK1G7SOGk6XdqW+AvikCaFgn2L61xLzZ+/1T+EIQ
+  kEBlV3T091PZqlqaXtB7X5+EY1UsyVYXflfpaBrVmojGYMt5fVIiKW+E/W1yeqAc
+  QQGX/2JBeqMvdEbmffo+iNYImPNPIvudygchE7E5A2GEVXvCkWk0yTsA4TYIq1eU
+  H3C3k3ADZnmst/73oReAImg6k6gLbgVfYmCgTmQu5J5m9eanaMGzXhTDPMLhkE1+
+  QwIDAQAB
+  -----END PUBLIC KEY-----

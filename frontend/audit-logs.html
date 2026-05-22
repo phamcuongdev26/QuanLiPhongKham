@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lịch sử thay đổi - Phòng Khám</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .action-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:700; }
+    .action-CREATE { background:#eafaf1; color:#27ae60; }
+    .action-UPDATE { background:#e8f4fd; color:#2980b9; }
+    .action-DELETE { background:#fdecea; color:#e74c3c; }
+    .entity-USER { background:#f3e5f5; color:#8e24aa; }
+    .entity-CATEGORY { background:#fff3e0; color:#e67e22; }
+    .entity-SELLER { background:#e3f2fd; color:#1565c0; }
+    .filter-bar { display:flex; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); align-items:flex-end; }
+    .filter-bar .form-group { display:flex; flex-direction:column; gap:4px; }
+    .filter-bar label { font-size:.78rem; color:var(--text-light); font-weight:600; }
+    .filter-bar input[type=date], .filter-bar select { padding:7px 12px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:.88rem; background:#fff; }
+    .filter-bar input[type=date]:focus, .filter-bar select:focus { border-color:var(--primary); outline:none; }
+    .diff-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .diff-old { background:#fdecea; border-radius:6px; padding:10px; }
+    .diff-new { background:#eafaf1; border-radius:6px; padding:10px; }
+    .diff-label { font-size:.75rem; font-weight:700; margin-bottom:6px; }
+    .diff-old .diff-label { color:#e74c3c; }
+    .diff-new .diff-label { color:#27ae60; }
+    .json-pre { font-size:.75rem; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto; background:#f8f9fa; padding:10px; border-radius:6px; }
+    .ip-text { font-size:.75rem; color:#aaa; font-family:monospace; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng Khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2>&#128203; Lịch sử thay đổi</h2>
+      <div class="topbar-right"><span class="badge" id="roleBadge"></span></div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <!-- Bộ lọc -->
+        <div class="filter-bar">
+          <div class="form-group">
+            <label>Từ ngày</label>
+            <input type="date" id="filterFrom" />
+          </div>
+          <div class="form-group">
+            <label>Đến ngày</label>
+            <input type="date" id="filterTo" />
+          </div>
+          <div class="form-group">
+            <label>Đối tượng</label>
+            <select id="filterEntity">
+              <option value="">Tất cả</option>
+              <option value="USER">Tài khoản</option>
+              <option value="SELLER">Bán hàng</option>
+              <option value="CATEGORY">Danh mục</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Hành động</label>
+            <select id="filterAction">
+              <option value="">Tất cả</option>
+              <option value="CREATE">Tạo mới</option>
+              <option value="UPDATE">Cập nhật</option>
+              <option value="DELETE">Xóa</option>
+            </select>
+          </div>
+          <div class="form-group" style="justify-content:flex-end;flex-direction:row;gap:8px;">
+            <button class="btn btn-primary btn-sm" onclick="resetAndLoad()">&#128269; Tìm kiếm</button>
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">&#8635; Làm mới</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:48px;">#</th>
+                <th>Hành động</th>
+                <th>Đối tượng</th>
+                <th>Người thực hiện</th>
+                <th>Chi tiết</th>
+                <th>Ngày thực hiện</th>
+                <th style="width:80px;">So sánh</th>
+              </tr>
+            </thead>
+            <tbody id="logsBody">
+              <tr><td colspan="7" style="text-align:center;padding:32px;color:#999;">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="emptyMsg" class="empty-state" style="display:none;">
+          <div class="empty-icon">&#128203;</div>
+          <p>Chưa có lịch sử thay đổi</p>
+        </div>
+        <div class="pagination-wrap">
+          <span class="pagination-info" id="paginationInfo"></span>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DIFF MODAL -->
+<div class="modal-overlay" id="diffModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <h3>So sánh thay đổi</h3>
+      <button class="modal-close" onclick="closeDiff()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <p id="diffDetail" style="margin-bottom:12px;color:#666;font-size:.85rem;"></p>
+      <div class="diff-row" id="diffContent"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  if (!token || role !== 'ADMIN') window.location.href = 'login.html';
+
+  let currentPage = 0;
+  const PAGE_SIZE = 10;
+  let _logs = [];
+  let _gotoPage = null;
+
+  // Mặc định: từ đầu tháng đến hôm nay
+  const today = new Date();
+  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  document.getElementById('filterFrom').value = toDateInput(firstOfMonth);
+  document.getElementById('filterTo').value = toDateInput(today);
+
+  function toDateInput(d) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+  }
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
+    t.innerHTML = `<span>${type === 'success' ? '&#9989;' : '&#10060;'}</span> ${msg}`;
+    c.appendChild(t); setTimeout(() => t.remove(), 3500);
+  }
+
+  function fmtDateTime(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  function resetAndLoad() { currentPage = 0; loadLogs(); }
+
+  function resetFilters() {
+    document.getElementById('filterFrom').value = toDateInput(firstOfMonth);
+    document.getElementById('filterTo').value = toDateInput(today);
+    document.getElementById('filterEntity').value = '';
+    document.getElementById('filterAction').value = '';
+    resetAndLoad();
+  }
+
+  async function loadLogs() {
+    const entityType = document.getElementById('filterEntity').value;
+    const action = document.getElementById('filterAction').value;
+    const from = document.getElementById('filterFrom').value;
+    const to = document.getElementById('filterTo').value;
+    const params = new URLSearchParams({ page: currentPage, size: PAGE_SIZE });
+    if (entityType) params.append('entityType', entityType);
+    if (action) params.append('action', action);
+    if (from) params.append('from', from);
+    if (to) params.append('to', to);
+
+    try {
+      const res = await fetch(`${API}/api/admin/audit-logs?${params}`, { headers: authHeaders() });
+      if (res.status === 401 || res.status === 403) { logout(); return; }
+      const data = await res.json();
+      const page = data.result || {};
+      _logs = page.content || [];
+      renderTable(_logs, page);
+      renderPagination(page.page || 0, page.totalPages || 0, page.totalElements || 0, PAGE_SIZE, goToPage);
+    } catch { toast('Lỗi tải lịch sử', 'error'); }
+  }
+
+  function goToPage(p) { currentPage = p; loadLogs(); }
+
+  function renderTable(logs, page) {
+    const tbody = document.getElementById('logsBody');
+    const empty = document.getElementById('emptyMsg');
+    if (logs.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    const offset = (page.page || 0) * PAGE_SIZE;
+    tbody.innerHTML = logs.map((l, i) => `
+      <tr>
+        <td>${offset + i + 1}</td>
+        <td><span class="action-badge action-${l.action}">${actionLabel(l.action)}</span></td>
+        <td>
+          <span class="action-badge entity-${l.entityType}">${entityLabel(l.entityType)}</span>
+          ${l.entityName ? `<br><small style="color:#555;font-size:.78rem;">${l.entityName}</small>` : ''}
+        </td>
+        <td>
+          <strong>${l.adminUsername}</strong>
+          ${l.adminFullName && l.adminFullName !== l.adminUsername ? `<br><small style="color:#777;font-size:.78rem;">${l.adminFullName}</small>` : ''}
+          ${l.ipAddress ? `<br><span class="ip-text">${l.ipAddress}</span>` : ''}
+        </td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;">${l.detail || '—'}</td>
+        <td style="white-space:nowrap;font-size:.82rem;">${fmtDateTime(l.createdAt)}</td>
+        <td>${(l.oldValue || l.newValue) ? `<button class="btn btn-info btn-sm" onclick="showDiff(${l.id})">&#128065;</button>` : '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function actionLabel(a) {
+    return { CREATE:'Tạo mới', UPDATE:'Cập nhật', DELETE:'Xóa' }[a] || a;
+  }
+  function entityLabel(e) {
+    return { USER:'Tài khoản', SELLER:'Bán hàng', CATEGORY:'Danh mục' }[e] || e;
+  }
+
+  function showDiff(id) {
+    const log = _logs.find(l => l.id === id);
+    if (!log) return;
+    document.getElementById('diffDetail').textContent =
+      `${actionLabel(log.action)} • ${entityLabel(log.entityType)} • ${log.entityName || ''} • ${fmtDateTime(log.createdAt)}`;
+    let html = '';
+    if (log.oldValue) html += `<div class="diff-old"><div class="diff-label">&#10060; Giá trị cũ</div><pre class="json-pre">${formatJson(log.oldValue)}</pre></div>`;
+    if (log.newValue) html += `<div class="diff-new"><div class="diff-label">&#9989; Giá trị mới</div><pre class="json-pre">${formatJson(log.newValue)}</pre></div>`;
+    if (!html) html = '<p>Không có dữ liệu so sánh</p>';
+    document.getElementById('diffContent').innerHTML = html;
+    document.getElementById('diffModal').classList.add('open');
+  }
+
+  function formatJson(str) {
+    try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
+  }
+
+  function closeDiff() { document.getElementById('diffModal').classList.remove('open'); }
+  document.getElementById('diffModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDiff(); });
+
+  function renderPagination(page, totalPages, totalElements, size, onPageChange) {
+    _gotoPage = onPageChange;
+    const el = document.getElementById('pagination');
+    const infoEl = document.getElementById('paginationInfo');
+    if (!el) return;
+    const start = totalElements === 0 ? 0 : page * size + 1;
+    const end = Math.min((page + 1) * size, totalElements);
+    if (infoEl) infoEl.textContent = totalElements > 0 ? `Hiển thị ${start}–${end} / ${totalElements} bản ghi` : '';
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+    let html = `<button class="page-btn" onclick="_gotoPage(0)" ${page===0?'disabled':''}>«</button>`;
+    html += `<button class="page-btn" onclick="_gotoPage(${page-1})" ${page===0?'disabled':''}>‹</button>`;
+    getPageRange(page, totalPages).forEach(p => {
+      if (p === '...') html += `<button class="page-btn dots">…</button>`;
+      else html += `<button class="page-btn ${p===page?'active':''}" onclick="_gotoPage(${p})">${p+1}</button>`;
+    });
+    html += `<button class="page-btn" onclick="_gotoPage(${page+1})" ${page>=totalPages-1?'disabled':''}>›</button>`;
+    html += `<button class="page-btn" onclick="_gotoPage(${totalPages-1})" ${page>=totalPages-1?'disabled':''}>»</button>`;
+    el.innerHTML = html;
+  }
+
+  function getPageRange(current, total) {
+    if (total <= 7) return Array.from({length: total}, (_, i) => i);
+    if (current <= 3) return [0,1,2,3,4,'...',total-1];
+    if (current >= total-4) return [0,'...',total-5,total-4,total-3,total-2,total-1];
+    return [0,'...',current-1,current,current+1,'...',total-1];
+  }
+
+  loadLogs();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

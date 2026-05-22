@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hồ sơ - Phòng Khám</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng Khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="topbar">
+      <h2>&#128196; Hồ sơ cá nhân</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card" style="max-width:600px;">
+        <div class="card-header"><h3>Thông tin tài khoản</h3></div>
+        <div class="modal-body" id="profileContent">
+          <p style="color:#999;text-align:center;padding:20px;">Đang tải...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+  const userId = localStorage.getItem('userId');
+
+  if (!token) window.location.href = 'login.html';
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleString('vi-VN');
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await fetch(`${API}/api/me`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.status === 401) { logout(); return; }
+      if (!res.ok) throw new Error('Không thể tải hồ sơ');
+      const data = await res.json();
+      const u = data.result || data;
+
+      document.getElementById('profileContent').innerHTML = `
+        <div style="display:grid;gap:14px;padding:8px 0;">
+          <div class="form-row">
+            <div class="form-group"><label>Username</label><input type="text" value="${u.username || ''}" readonly /></div>
+            <div class="form-group"><label>Role</label><input type="text" value="${u.role || ''}" readonly /></div>
+          </div>
+          <div class="form-group"><label>Họ tên</label><input type="text" value="${u.fullName || ''}" readonly /></div>
+          <div class="form-group"><label>Email</label><input type="email" value="${u.email || ''}" readonly /></div>
+          <div class="form-row">
+            <div class="form-group"><label>Số điện thoại</label><input type="text" value="${u.phoneNumber || ''}" readonly /></div>
+            <div class="form-group"><label>Trạng thái</label>
+              <input type="text" value="${u.isActive ? 'Hoạt động' : 'Bị khóa'}" readonly
+                style="color:${u.isActive ? 'var(--success)' : 'var(--danger)'};font-weight:600;" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Ngày tạo</label><input type="text" value="${fmtDate(u.createdAt)}" readonly /></div>
+            <div class="form-group"><label>Cập nhật</label><input type="text" value="${fmtDate(u.updatedAt)}" readonly /></div>
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      document.getElementById('profileContent').innerHTML =
+        `<p style="color:red;text-align:center;padding:20px;">${err.message}</p>`;
+    }
+  }
+
+  loadProfile();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

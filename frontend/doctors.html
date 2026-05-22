@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh sách bác sĩ - Phòng khám</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .doctor-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px; padding: 28px;
+    }
+    .doctor-card {
+      background: var(--white); border-radius: 12px; padding: 24px;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+    }
+    .doctor-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, #ee4d2d, #ff7849);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; color: white; font-weight: 700;
+    }
+    .doctor-info h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .doctor-info .title { font-size: .85rem; color: var(--text-light); }
+    .doctor-info .specialty { font-size: .85rem; color: var(--primary); font-weight: 600; margin-top: 4px; }
+    .doctor-fee { font-size: .9rem; color: var(--success); font-weight: 600; }
+    .doctor-bio { font-size: .82rem; color: var(--text-light); line-height: 1.5; }
+    .breadcrumb { padding: 16px 28px 0; font-size: .875rem; color: var(--text-light); }
+    .breadcrumb a { color: var(--primary); text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2 id="pageTitle">Danh sách bác sĩ</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+        <div style="position:relative;" id="notifWrapper">
+          <button class="notif-bell-btn" id="notifBell" onclick="toggleNotifDropdown(event)">&#128276;<span class="notif-badge" id="notifBadge"></span></button>
+          <div class="notif-dropdown" id="notifDropdown">
+            <div class="notif-dropdown-header">
+              <span>Thông báo</span>
+              <button class="btn btn-outline btn-sm" onclick="markAllRead()">Đọc tất cả</button>
+            </div>
+            <div class="notif-list" id="notifList"><div class="notif-empty">Đang tải...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="breadcrumb">
+      <a href="specialties.html">Chuyên khoa</a> &rsaquo; <span id="breadSpecialty"></span>
+    </div>
+
+    <div id="doctorGrid" class="doctor-grid">
+      <div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">Đang tải...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+
+  if (!token || role !== 'PATIENT') window.location.href = 'login.html';
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  const params = new URLSearchParams(location.search);
+  const specialtyId = params.get('specialtyId');
+  const specialtyName = params.get('specialtyName') || 'Tất cả';
+
+  document.getElementById('breadSpecialty').textContent = specialtyName;
+  document.getElementById('pageTitle').textContent = `Bác sĩ - ${specialtyName}`;
+
+  function initials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    return parts[parts.length - 1][0].toUpperCase();
+  }
+
+  function fmtFee(fee) {
+    if (!fee) return 'Liên hệ';
+    return new Intl.NumberFormat('vi-VN').format(fee) + ' đ';
+  }
+
+  async function loadDoctors() {
+    try {
+      const url = specialtyId
+        ? `${API}/api/doctors?specialtyId=${specialtyId}`
+        : `${API}/api/doctors`;
+      const res = await fetch(url);
+      const list = await res.json();
+      const grid = document.getElementById('doctorGrid');
+      if (!list || list.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">Không có bác sĩ trong chuyên khoa này</div>';
+        return;
+      }
+      grid.innerHTML = list.map(d => `
+        <div class="doctor-card">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="doctor-avatar">${initials(d.fullName)}</div>
+            <div class="doctor-info">
+              <h3>${d.fullName || '-'}</h3>
+              <div class="title">${d.title || ''}</div>
+              <div class="specialty">${d.specialtyName || ''}</div>
+            </div>
+          </div>
+          ${d.bio ? `<div class="doctor-bio">${d.bio}</div>` : ''}
+          <div class="doctor-fee">Phí khám: ${fmtFee(d.consultationFee)}</div>
+          <a href="booking.html?doctorId=${d.id}&specialtyId=${d.specialtyId || specialtyId || ''}&specialtyName=${encodeURIComponent(specialtyName)}"
+             class="btn btn-primary btn-sm">&#128197; Đặt lịch</a>
+        </div>
+      `).join('');
+    } catch (err) {
+      document.getElementById('doctorGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#e74c3c;">Không thể tải dữ liệu</div>';
+    }
+  }
+
+  loadDoctors();
+
+  // ── NOTIFICATIONS ──
+  const NOTIF_API = `${API}/api/patient/notifications`;
+  let _notifOpen = false;
+  async function loadUnreadCount() {
+    try {
+      const res = await fetch(`${NOTIF_API}/unread-count`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      const count = data.result || 0;
+      const badge = document.getElementById('notifBadge');
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.style.display = count > 0 ? 'flex' : 'none';
+    } catch {}
+  }
+  async function loadNotifications() {
+    const listEl = document.getElementById('notifList');
+    try {
+      const res = await fetch(NOTIF_API, { headers: { 'Authorization': `Bearer ${token}` } });
+      const notifs = await res.json();
+      if (!Array.isArray(notifs) || !notifs.length) { listEl.innerHTML = '<div class="notif-empty">Không có thông báo nào</div>'; return; }
+      listEl.innerHTML = notifs.slice(0, 20).map(n => `<div class="notif-item${!n.read ? ' unread' : ''}" onclick="markRead(${n.id}, this)"><div class="notif-item-title">${n.title || ''}</div><div class="notif-item-msg">${n.message || ''}</div><div class="notif-item-time">${fmtRelativeTime(n.createdAt)}</div></div>`).join('');
+    } catch { listEl.innerHTML = '<div class="notif-empty">Không thể tải thông báo</div>'; }
+  }
+  function fmtRelativeTime(dt) {
+    if (!dt) return '';
+    const diff = Math.floor((Date.now() - new Date(dt)) / 1000);
+    if (diff < 60) return 'Vừa xong';
+    if (diff < 3600) return `${Math.floor(diff/60)} phút trước`;
+    if (diff < 86400) return `${Math.floor(diff/3600)} giờ trước`;
+    return new Date(dt).toLocaleDateString('vi-VN');
+  }
+  function toggleNotifDropdown(e) {
+    e.stopPropagation(); _notifOpen = !_notifOpen;
+    document.getElementById('notifDropdown').classList.toggle('open', _notifOpen);
+    if (_notifOpen) loadNotifications();
+  }
+  async function markRead(id, el) {
+    try { await fetch(`${NOTIF_API}/${id}/read`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } }); el.classList.remove('unread'); loadUnreadCount(); } catch {}
+  }
+  async function markAllRead() {
+    try { await fetch(`${NOTIF_API}/read-all`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${token}` } }); document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread')); document.getElementById('notifBadge').style.display = 'none'; } catch {}
+  }
+  document.addEventListener('click', e => { if (_notifOpen && !document.getElementById('notifWrapper').contains(e.target)) { _notifOpen = false; document.getElementById('notifDropdown').classList.remove('open'); } });
+  loadUnreadCount();
+  setInterval(loadUnreadCount, 30000);
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

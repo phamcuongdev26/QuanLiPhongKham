@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lịch hẹn hôm nay - Bác sĩ</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .appt-row { display: grid; grid-template-columns: 100px 1fr 160px; gap: 16px; align-items: center; }
+    .time-block { text-align: center; }
+    .time-block .hour { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .time-block .ampm { font-size: .75rem; color: var(--text-light); }
+    .patient-info h4 { font-size: .9rem; font-weight: 700; margin-bottom: 4px; }
+    .patient-info p { font-size: .82rem; color: var(--text-light); }
+    .status-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: .75rem; font-weight: 700;
+    }
+    .status-PENDING { background: #fff8e1; color: #f39c12; }
+    .status-CONFIRMED { background: #e8f4fd; color: #2980b9; }
+    .status-COMPLETED { background: #eafaf1; color: #27ae60; }
+    .status-CANCELED { background: #f0f0f0; color: #999; }
+    .status-REJECTED { background: #fdecea; color: #e74c3c; }
+    .date-picker-bar { padding: 16px 28px; display: flex; align-items: center; gap: 12px; }
+    .date-picker-bar input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: .9rem; outline: none; }
+    .date-picker-bar input:focus { border-color: var(--primary); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2>Lịch hẹn</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+      </div>
+    </div>
+
+    <div class="date-picker-bar">
+      <label style="font-size:.9rem;font-weight:600;">Ngày:</label>
+      <input type="date" id="pickDate" />
+      <button class="btn btn-outline btn-sm" onclick="goToday()">Hôm nay</button>
+    </div>
+
+    <div style="padding: 0 28px 28px;" id="listContainer">
+      <div style="text-align:center;padding:48px;color:#999;">Đang tải...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal cập nhật trạng thái -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Cập nhật lịch hẹn</h3>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Trạng thái</label>
+        <select id="statusSelect">
+          <option value="CONFIRMED">Xác nhận</option>
+          <option value="COMPLETED">Hoàn thành</option>
+          <option value="REJECTED">Từ chối</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Ghi chú bác sĩ</label>
+        <textarea id="doctorNote" style="width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:.9rem;resize:vertical;min-height:80px;outline:none;font-family:inherit;" placeholder="Ghi chú, chẩn đoán sơ bộ..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="submitStatus()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+
+  if (!token || role !== 'DOCTOR') window.location.href = 'login.html';
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
+
+  function toast(msg, type = 'success') {
+    const tc = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
+    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    tc.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('pickDate').value = today;
+  document.getElementById('pickDate').addEventListener('change', () => loadAppointments());
+
+  function goToday() {
+    document.getElementById('pickDate').value = today;
+    loadAppointments();
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmtTime(dt) {
+    const d = new Date(dt);
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  const STATUS_LABEL = {
+    PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận',
+    COMPLETED: 'Hoàn thành', CANCELED: 'Đã hủy', REJECTED: 'Từ chối'
+  };
+
+  let currentApptId = null;
+
+  function openModal(appt) {
+    currentApptId = appt.id;
+    document.getElementById('modalTitle').textContent = `Bệnh nhân: ${appt.patientName}`;
+    document.getElementById('doctorNote').value = appt.doctorNote || '';
+    document.getElementById('statusModal').classList.add('open');
+  }
+
+  function closeModal() {
+    currentApptId = null;
+    document.getElementById('statusModal').classList.remove('open');
+  }
+
+  async function submitStatus() {
+    if (!currentApptId) return;
+    const status = document.getElementById('statusSelect').value;
+    const doctorNote = document.getElementById('doctorNote').value.trim() || null;
+    try {
+      const res = await fetch(`${API}/api/appointments/${currentApptId}/status`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ status, doctorNote })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      toast('Cập nhật thành công');
+      closeModal();
+      if (status === 'COMPLETED') {
+        setTimeout(() => window.location.href = `doctor-records.html?appointmentId=${currentApptId || data.id}`, 500);
+      }
+      loadAppointments();
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  async function loadAppointments() {
+    const date = document.getElementById('pickDate').value;
+    const container = document.getElementById('listContainer');
+    container.innerHTML = '<div style="text-align:center;padding:48px;color:#999;">Đang tải...</div>';
+    try {
+      const res = await fetch(`${API}/api/doctor/appointments/today?date=${date}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const list = await res.json();
+      if (!list.length) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Không có lịch hẹn trong ngày này</p></div>`;
+        return;
+      }
+      container.innerHTML = `<div class="card">
+        <div class="table-wrap"><table>
+          <thead><tr>
+            <th>Giờ</th><th>Bệnh nhân</th><th>Chuyên khoa</th><th>Triệu chứng</th><th>Trạng thái</th><th>Thao tác</th>
+          </tr></thead>
+          <tbody>${list.map(a => `
+            <tr>
+              <td><strong>${fmtTime(a.startTime)} – ${fmtTime(a.endTime)}</strong></td>
+              <td>${a.patientName || '-'}</td>
+              <td>${a.specialtyName || '-'}</td>
+              <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.symptomDescription || '-'}</td>
+              <td><span class="status-badge status-${a.status}">${STATUS_LABEL[a.status] || a.status}</span></td>
+              <td class="actions">
+                ${a.status !== 'COMPLETED' && a.status !== 'CANCELED' && a.status !== 'REJECTED' ? `
+                  <button class="btn btn-info btn-sm" onclick='openModal(${JSON.stringify(a)})'>Cập nhật</button>
+                ` : ''}
+                ${a.status === 'COMPLETED' ? `
+                  <a href="doctor-records.html?appointmentId=${a.id}" class="btn btn-success btn-sm">Hồ sơ</a>
+                ` : ''}
+              </td>
+            </tr>
+          `).join('')}</tbody>
+        </table></div>
+      </div>`;
+    } catch (err) {
+      container.innerHTML = '<div style="color:var(--danger);text-align:center;padding:40px;">Không thể tải dữ liệu</div>';
+    }
+  }
+
+  loadAppointments();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

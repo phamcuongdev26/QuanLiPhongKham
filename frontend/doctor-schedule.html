@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lịch làm việc - Bác sĩ</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .schedule-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 28px; }
+    .day-chip {
+      display: inline-block; padding: 6px 14px; border-radius: 20px;
+      border: 1.5px solid var(--border); cursor: pointer; font-size: .85rem; font-weight: 600;
+      background: var(--white); color: var(--text-light); transition: all .15s; margin: 3px;
+    }
+    .day-chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
+    .shift-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      background: #e8f4fd; color: #2980b9; font-size: .8rem; font-weight: 600;
+    }
+    .dayoff-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 12px;
+      background: #fdecea; color: #e74c3c; font-size: .8rem;
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2>Lịch làm việc</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+      </div>
+    </div>
+
+    <div class="schedule-layout">
+      <!-- Work Shifts -->
+      <div class="card" style="padding:24px;">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128336; Ca làm việc</h3>
+        <div id="alertShift" class="alert"></div>
+
+        <div class="form-group">
+          <label>Ngày trong tuần</label>
+          <div id="dayPicker">
+            <span class="day-chip" data-day="MONDAY" onclick="toggleDay(this)">Thứ 2</span>
+            <span class="day-chip" data-day="TUESDAY" onclick="toggleDay(this)">Thứ 3</span>
+            <span class="day-chip" data-day="WEDNESDAY" onclick="toggleDay(this)">Thứ 4</span>
+            <span class="day-chip" data-day="THURSDAY" onclick="toggleDay(this)">Thứ 5</span>
+            <span class="day-chip" data-day="FRIDAY" onclick="toggleDay(this)">Thứ 6</span>
+            <span class="day-chip" data-day="SATURDAY" onclick="toggleDay(this)">Thứ 7</span>
+            <span class="day-chip" data-day="SUNDAY" onclick="toggleDay(this)">CN</span>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Giờ bắt đầu</label>
+            <input type="time" id="shiftStart" />
+          </div>
+          <div class="form-group">
+            <label>Giờ kết thúc</label>
+            <input type="time" id="shiftEnd" />
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addShift()" style="margin-bottom:20px;">+ Thêm ca</button>
+
+        <div id="shiftList">
+          <div style="text-align:center;color:#999;font-size:.875rem;padding:20px;">Đang tải...</div>
+        </div>
+      </div>
+
+      <!-- Days Off -->
+      <div class="card" style="padding:24px;">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#127964; Ngày nghỉ</h3>
+        <div id="alertDayOff" class="alert"></div>
+
+        <div class="form-group">
+          <label>Ngày nghỉ</label>
+          <input type="date" id="dayOffDate" />
+        </div>
+        <div class="form-group">
+          <label>Lý do (tuỳ chọn)</label>
+          <input type="text" id="dayOffReason" placeholder="Nghỉ phép, hội thảo..." />
+        </div>
+        <button class="btn btn-warning btn-sm" onclick="addDayOff()" style="margin-bottom:20px;">+ Thêm ngày nghỉ</button>
+
+        <div id="dayOffList">
+          <div style="text-align:center;color:#999;font-size:.875rem;padding:20px;">Đang tải...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+
+  if (!token || role !== 'DOCTOR') window.location.href = 'login.html';
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
+
+  function toast(msg, type = 'success') {
+    const tc = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
+    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    tc.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  const DAY_LABEL = {
+    MONDAY:'Thứ 2', TUESDAY:'Thứ 3', WEDNESDAY:'Thứ 4',
+    THURSDAY:'Thứ 5', FRIDAY:'Thứ 6', SATURDAY:'Thứ 7', SUNDAY:'Chủ nhật'
+  };
+
+  let selectedDay = null;
+
+  function toggleDay(el) {
+    document.querySelectorAll('.day-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedDay = el.dataset.day;
+  }
+
+  function showAlert(id, msg, type = 'error') {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = `alert alert-${type} show`;
+    setTimeout(() => el.className = 'alert', 3000);
+  }
+
+  async function addShift() {
+    if (!selectedDay) { showAlert('alertShift', 'Vui lòng chọn ngày trong tuần'); return; }
+    const start = document.getElementById('shiftStart').value;
+    const end = document.getElementById('shiftEnd').value;
+    if (!start || !end) { showAlert('alertShift', 'Vui lòng chọn giờ bắt đầu và kết thúc'); return; }
+    if (start >= end) { showAlert('alertShift', 'Giờ kết thúc phải sau giờ bắt đầu'); return; }
+    try {
+      const res = await fetch(`${API}/api/doctor/schedule/shifts`, {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ dayOfWeek: selectedDay, startTime: start, endTime: end })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      toast('Đã thêm ca làm việc');
+      loadShifts();
+    } catch (err) {
+      showAlert('alertShift', err.message);
+    }
+  }
+
+  async function loadShifts() {
+    const container = document.getElementById('shiftList');
+    try {
+      const res = await fetch(`${API}/api/doctor/schedule/shifts`, { headers: authHeaders() });
+      const list = await res.json();
+      if (!list.length) { container.innerHTML = '<div style="text-align:center;color:#999;font-size:.875rem;padding:20px;">Chưa có ca làm việc nào</div>'; return; }
+      const ordered = ['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+      const sorted = [...list].sort((a, b) => ordered.indexOf(a.dayOfWeek) - ordered.indexOf(b.dayOfWeek));
+      container.innerHTML = `<table style="width:100%;font-size:.85rem;border-collapse:collapse;">
+        <thead><tr style="background:#fafafa;">
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Ngày</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Ca</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Trạng thái</th>
+        </tr></thead>
+        <tbody>${sorted.map(s => `
+          <tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:8px 10px;font-weight:600;">${DAY_LABEL[s.dayOfWeek] || s.dayOfWeek}</td>
+            <td style="padding:8px 10px;"><span class="shift-badge">${s.startTime} – ${s.endTime}</span></td>
+            <td style="padding:8px 10px;">${s.isActive ? '<span style="color:var(--success);font-size:.8rem;">Hoạt động</span>' : '<span style="color:#999;font-size:.8rem;">Tắt</span>'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+    } catch (err) {
+      container.innerHTML = '<div style="color:var(--danger);text-align:center;padding:20px;font-size:.875rem;">Không thể tải dữ liệu</div>';
+    }
+  }
+
+  async function addDayOff() {
+    const date = document.getElementById('dayOffDate').value;
+    const reason = document.getElementById('dayOffReason').value.trim() || null;
+    if (!date) { showAlert('alertDayOff', 'Vui lòng chọn ngày nghỉ'); return; }
+    try {
+      const res = await fetch(`${API}/api/doctor/schedule/days-off`, {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ date, reason })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      toast('Đã thêm ngày nghỉ');
+      document.getElementById('dayOffDate').value = '';
+      document.getElementById('dayOffReason').value = '';
+      loadDaysOff();
+    } catch (err) {
+      showAlert('alertDayOff', err.message);
+    }
+  }
+
+  async function loadDaysOff() {
+    const container = document.getElementById('dayOffList');
+    try {
+      const res = await fetch(`${API}/api/doctor/schedule/days-off`, { headers: authHeaders() });
+      const list = await res.json();
+      if (!list.length) { container.innerHTML = '<div style="text-align:center;color:#999;font-size:.875rem;padding:20px;">Chưa có ngày nghỉ nào</div>'; return; }
+      const sorted = [...list].sort((a, b) => new Date(a.date) - new Date(b.date));
+      container.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px;">${sorted.map(d => {
+        const dt = new Date(d.date);
+        const label = dt.toLocaleDateString('vi-VN', {weekday:'short', day:'2-digit', month:'2-digit', year:'numeric'});
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8fafc;border-radius:8px;">
+          <span class="dayoff-badge">${label}</span>
+          ${d.reason ? `<span style="font-size:.8rem;color:var(--text-light);">${d.reason}</span>` : ''}
+        </div>`;
+      }).join('')}</div>`;
+    } catch (err) {
+      container.innerHTML = '<div style="color:var(--danger);text-align:center;padding:20px;font-size:.875rem;">Không thể tải dữ liệu</div>';
+    }
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('dayOffDate').min = todayStr;
+
+  loadShifts();
+  loadDaysOff();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

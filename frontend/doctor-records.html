@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hồ sơ bệnh án - Bác sĩ</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .records-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 28px; }
+    textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius);
+      font-size: .9rem; resize: vertical; outline: none; font-family: inherit; }
+    textarea:focus { border-color: var(--primary); }
+    .drug-row {
+      display: grid; grid-template-columns: 1fr 80px 120px 90px 1fr 36px;
+      gap: 6px; align-items: center; margin-bottom: 8px;
+    }
+    .drug-row input { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: .82rem; outline: none; }
+    .drug-row input:focus { border-color: var(--primary); }
+    .remove-drug { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+    .appt-info-bar {
+      background: var(--white); border-radius: 10px; padding: 16px 20px;
+      margin: 20px 28px 0; box-shadow: var(--shadow);
+      display: flex; gap: 24px; flex-wrap: wrap; font-size: .875rem;
+    }
+    .appt-info-bar span { color: var(--text-light); }
+    .appt-info-bar strong { color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2>Hồ sơ bệnh án</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+        <a href="doctor-appointments.html" class="btn btn-outline btn-sm">&#8592; Quay lại</a>
+      </div>
+    </div>
+
+    <div class="appt-info-bar" id="apptInfoBar">
+      <span>Đang tải thông tin lịch hẹn...</span>
+    </div>
+
+    <div class="records-layout">
+      <!-- Medical Record -->
+      <div class="card" style="padding:24px;">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128203; Hồ sơ bệnh án</h3>
+        <div id="alertRecord" class="alert"></div>
+        <div class="form-group">
+          <label>Chẩn đoán</label>
+          <textarea id="diagnosis" rows="4" placeholder="Chẩn đoán bệnh..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Ghi chú lâm sàng</label>
+          <textarea id="clinicalNote" rows="5" placeholder="Ghi chú khám lâm sàng, xét nghiệm..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveRecord()">&#128190; Lưu hồ sơ</button>
+      </div>
+
+      <!-- Prescription -->
+      <div class="card" style="padding:24px;">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128138; Đơn thuốc</h3>
+        <div id="alertPrx" class="alert"></div>
+        <div class="form-group">
+          <label>Ghi chú đơn thuốc</label>
+          <textarea id="prxNote" rows="2" placeholder="Ghi chú chung về đơn thuốc..."></textarea>
+        </div>
+
+        <div style="margin-bottom:8px;font-size:.85rem;font-weight:600;">Danh sách thuốc</div>
+        <div style="display:grid;grid-template-columns:1fr 80px 120px 90px 1fr 36px;gap:6px;margin-bottom:6px;">
+          <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Tên thuốc</span>
+          <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Liều</span>
+          <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Tần suất</span>
+          <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Thời gian</span>
+          <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Hướng dẫn</span>
+          <span></span>
+        </div>
+        <div id="drugRows"></div>
+        <button class="btn btn-outline btn-sm" style="margin-bottom:16px;" onclick="addDrug()">+ Thêm thuốc</button>
+        <br/>
+        <button class="btn btn-success" onclick="savePrescription()">&#128190; Lưu đơn thuốc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  const username = localStorage.getItem('username');
+
+  if (!token || role !== 'DOCTOR') window.location.href = 'login.html';
+
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
+
+  function toast(msg, type = 'success') {
+    const tc = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
+    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    tc.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  const params = new URLSearchParams(location.search);
+  const appointmentId = params.get('appointmentId');
+  if (!appointmentId) window.location.href = 'doctor-appointments.html';
+
+  function fmtDateTime(dt) {
+    if (!dt) return '-';
+    const d = new Date(dt);
+    return d.toLocaleString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  }
+
+  async function loadApptInfo() {
+    const bar = document.getElementById('apptInfoBar');
+    try {
+      const res = await fetch(`${API}/api/doctor/appointments/today`, { headers: authHeaders() });
+      const list = await res.json();
+      const appt = list.find(a => String(a.id) === String(appointmentId));
+      if (!appt) { bar.innerHTML = `<span>Lịch hẹn #${appointmentId}</span>`; return; }
+      bar.innerHTML = `
+        <span>Bệnh nhân: <strong>${appt.patientName}</strong></span>
+        <span>Bác sĩ: <strong>${appt.doctorName}</strong></span>
+        <span>Chuyên khoa: <strong>${appt.specialtyName || '-'}</strong></span>
+        <span>Giờ khám: <strong>${fmtDateTime(appt.startTime)}</strong></span>
+        ${appt.symptomDescription ? `<span>Triệu chứng: <strong>${appt.symptomDescription}</strong></span>` : ''}
+      `;
+    } catch (err) {
+      bar.innerHTML = `<span>Lịch hẹn #${appointmentId}</span>`;
+    }
+  }
+
+  function addDrug() {
+    const container = document.getElementById('drugRows');
+    const row = document.createElement('div');
+    row.className = 'drug-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Tên thuốc *" class="drug-name" />
+      <input type="text" placeholder="500mg" class="drug-dosage" />
+      <input type="text" placeholder="2 lần/ngày" class="drug-freq" />
+      <input type="text" placeholder="7 ngày" class="drug-dur" />
+      <input type="text" placeholder="Uống sau ăn" class="drug-inst" />
+      <button class="remove-drug" onclick="this.closest('.drug-row').remove()">&#10005;</button>
+    `;
+    container.appendChild(row);
+  }
+
+  addDrug();
+
+  async function saveRecord() {
+    const alertEl = document.getElementById('alertRecord');
+    alertEl.className = 'alert';
+    const body = {
+      appointmentId,
+      diagnosis: document.getElementById('diagnosis').value.trim() || null,
+      clinicalNote: document.getElementById('clinicalNote').value.trim() || null
+    };
+    try {
+      const res = await fetch(`${API}/api/medical-records`, {
+        method: 'POST', headers: authHeaders(), body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      toast('Lưu hồ sơ thành công');
+    } catch (err) {
+      alertEl.textContent = err.message;
+      alertEl.className = 'alert alert-error show';
+    }
+  }
+
+  async function savePrescription() {
+    const alertEl = document.getElementById('alertPrx');
+    alertEl.className = 'alert';
+    const rows = document.querySelectorAll('.drug-row');
+    const items = [];
+    for (const row of rows) {
+      const name = row.querySelector('.drug-name').value.trim();
+      if (!name) { alertEl.textContent = 'Tên thuốc không được để trống'; alertEl.className = 'alert alert-error show'; return; }
+      items.push({
+        drugName: name,
+        dosage: row.querySelector('.drug-dosage').value.trim() || null,
+        frequency: row.querySelector('.drug-freq').value.trim() || null,
+        duration: row.querySelector('.drug-dur').value.trim() || null,
+        instruction: row.querySelector('.drug-inst').value.trim() || null
+      });
+    }
+    const body = {
+      note: document.getElementById('prxNote').value.trim() || null,
+      items
+    };
+    try {
+      const res = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/prescription`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      toast('Lưu đơn thuốc thành công');
+    } catch (err) {
+      alertEl.textContent = err.message;
+      alertEl.className = 'alert alert-error show';
+    }
+  }
+
+  loadApptInfo();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

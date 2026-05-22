@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Chuyên khoa - Phòng Khám</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 24px; }
+    .spec-card {
+      background: #fff; border-radius: 10px; padding: 20px;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+      border: 1.5px solid transparent; transition: border-color .2s;
+    }
+    .spec-card:hover { border-color: var(--primary); }
+    .spec-name { font-size: 1rem; font-weight: 700; color: var(--text); }
+    .spec-desc { font-size: .82rem; color: var(--text-light); flex: 1; line-height: 1.5; }
+    .spec-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng Khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2>&#127991; Quản lý Chuyên khoa</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+        <button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ Thêm chuyên khoa</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card">
+        <div class="table-controls">
+          <input type="text" class="search-input" id="searchInput" placeholder="&#128269; Tìm chuyên khoa..." oninput="filterSpecs()" />
+        </div>
+        <div id="specGrid" class="spec-grid">
+          <div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">Đang tải...</div>
+        </div>
+        <div id="emptyMsg" class="empty-state" style="display:none;">
+          <div class="empty-icon">&#127991;</div>
+          <p>Không tìm thấy chuyên khoa nào</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CREATE -->
+<div class="modal-overlay" id="specModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Thêm chuyên khoa mới</h3>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalAlert" class="alert alert-error"></div>
+      <form id="specForm">
+        <div class="form-group">
+          <label>Tên chuyên khoa *</label>
+          <input type="text" id="f_name" placeholder="VD: Tim mạch, Da liễu..." />
+        </div>
+        <div class="form-group">
+          <label>Mô tả</label>
+          <textarea id="f_desc" rows="3" placeholder="Mô tả ngắn về chuyên khoa..."
+            style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;resize:vertical;"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Hủy</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveSpec()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">&#9888;</div>
+    <h3>Xác nhận xóa</h3>
+    <p id="confirmMsg">Bạn có chắc muốn xóa chuyên khoa này?</p>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirm()">Hủy</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Xóa</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const API = 'http://localhost:8080';
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  if (!token || role !== 'ADMIN') window.location.href = 'login.html';
+
+  let allSpecs = [];
+
+  function authHeaders() {
+    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+  }
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
+    t.innerHTML = `<span>${type === 'success' ? '&#9989;' : '&#10060;'}</span> ${msg}`;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  async function loadSpecs() {
+    try {
+      const res = await fetch(`${API}/api/admin/specialties`, { headers: authHeaders() });
+      if (res.status === 401 || res.status === 403) { logout(); return; }
+      const data = await res.json();
+      allSpecs = Array.isArray(data) ? data : data.result || [];
+      renderGrid(allSpecs);
+    } catch { toast('Lỗi tải danh sách chuyên khoa', 'error'); }
+  }
+
+  function filterSpecs() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    renderGrid(q ? allSpecs.filter(s => s.name.toLowerCase().includes(q) || (s.description || '').toLowerCase().includes(q)) : allSpecs);
+  }
+
+  function renderGrid(list) {
+    const grid = document.getElementById('specGrid');
+    const empty = document.getElementById('emptyMsg');
+    if (!list.length) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    grid.innerHTML = list.map(s => `
+      <div class="spec-card">
+        <div class="spec-name">&#127973; ${s.name}</div>
+        <div class="spec-desc">${s.description || '<em style="color:#ccc;">Chưa có mô tả</em>'}</div>
+        <div class="spec-footer">
+          <span class="badge ${s.isActive ? 'badge-active' : 'badge-inactive'}">${s.isActive ? 'Hoạt động' : 'Không hoạt động'}</span>
+          <button class="btn btn-danger btn-sm" onclick="confirmDelete(${s.id}, '${s.name.replace(/'/g, '')}')">&#128465; Xóa</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function openCreateModal() {
+    document.getElementById('specForm').reset();
+    document.getElementById('modalAlert').className = 'alert alert-error';
+    document.getElementById('specModal').classList.add('open');
+  }
+  function closeModal() { document.getElementById('specModal').classList.remove('open'); }
+
+  async function saveSpec() {
+    const name = document.getElementById('f_name').value.trim();
+    const description = document.getElementById('f_desc').value.trim() || null;
+    const alertEl = document.getElementById('modalAlert');
+    alertEl.className = 'alert alert-error';
+
+    if (!name) {
+      alertEl.textContent = 'Tên chuyên khoa không được để trống';
+      alertEl.className = 'alert alert-error show';
+      return;
+    }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const res = await fetch(`${API}/api/admin/specialties`, {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ name, description })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thêm thất bại');
+      toast('Thêm chuyên khoa thành công!');
+      closeModal();
+      loadSpecs();
+    } catch (err) {
+      alertEl.textContent = err.message;
+      alertEl.className = 'alert alert-error show';
+    } finally { btn.disabled = false; btn.textContent = 'Lưu'; }
+  }
+
+  let deleteTarget = null;
+  function confirmDelete(id, name) {
+    deleteTarget = id;
+    document.getElementById('confirmMsg').textContent = `Bạn có chắc muốn xóa chuyên khoa "${name}"? Thao tác này không thể hoàn tác.`;
+    document.getElementById('confirmOverlay').classList.add('open');
+  }
+  function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); deleteTarget = null; }
+
+  document.getElementById('confirmOkBtn').onclick = async () => {
+    if (!deleteTarget) return;
+    try {
+      const res = await fetch(`${API}/api/admin/specialties/${deleteTarget}`, { method: 'DELETE', headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Xóa thất bại');
+      toast('Xóa chuyên khoa thành công!');
+      closeConfirm();
+      loadSpecs();
+    } catch (err) { toast(err.message, 'error'); closeConfirm(); }
+  };
+
+  document.getElementById('specModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+  document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeConfirm(); });
+
+  loadSpecs();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>

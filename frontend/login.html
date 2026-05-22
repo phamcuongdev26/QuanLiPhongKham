@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập - Phòng Khám</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>Phòng Khám</h1>
+      <p>Hệ thống quản lý nội bộ</p>
+    </div>
+    <h2>Đăng nhập</h2>
+
+    <div id="alert" class="alert alert-error"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Username hoặc Email</label>
+        <input type="text" id="usernameOrEmail" placeholder="Nhập username hoặc email" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Mật khẩu</label>
+        <input type="password" id="password" placeholder="Nhập mật khẩu" autocomplete="current-password" />
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+        Đăng nhập
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Chưa có tài khoản? <a href="register.html">Đăng ký</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8080';
+
+  if (localStorage.getItem('token')) {
+    const role = localStorage.getItem('role');
+    if (role === 'ADMIN') window.location.href = 'dashboard.html';
+    else if (role === 'DOCTOR') window.location.href = 'doctor-appointments.html';
+    else window.location.href = 'specialties.html';
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const alertEl = document.getElementById('alert');
+    alertEl.className = 'alert';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+
+    const body = {
+      usernameOrEmail: document.getElementById('usernameOrEmail').value.trim(),
+      password: document.getElementById('password').value
+    };
+
+    try {
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Đăng nhập thất bại');
+
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('role', data.role);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('userId', data.userId);
+
+      if (data.role === 'ADMIN') window.location.href = 'dashboard.html';
+      else if (data.role === 'DOCTOR') window.location.href = 'doctor-appointments.html';
+      else window.location.href = 'specialties.html';
+    } catch (err) {
+      alertEl.textContent = err.message;
+      alertEl.className = 'alert alert-error show';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Đăng nhập';
+    }
+  });
+</script>
+</body>
+</html>
