@@ -15,8 +15,6 @@
     </div>
     <h2>Đăng nhập</h2>
 
-    <div id="alert" class="alert alert-error"></div>
-
     <form id="loginForm">
       <div class="form-group">
         <label>Username hoặc Email</label>
@@ -26,6 +24,7 @@
         <label>Mật khẩu</label>
         <input type="password" id="password" placeholder="Nhập mật khẩu" autocomplete="current-password" />
       </div>
+      <div id="alert" class="alert alert-error"></div>
       <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
         Đăng nhập
       </button>
@@ -38,7 +37,7 @@
 </div>
 
 <script>
-  const API = 'http://localhost:8080';
+  const API = `http://${window.location.hostname}:8080`;
 
   if (localStorage.getItem('token')) {
     const role = localStorage.getItem('role');

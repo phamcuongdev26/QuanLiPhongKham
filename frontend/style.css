@@ -20,7 +20,7 @@
   --shadow: 0 2px 8px rgba(0,0,0,.12);
 }
 
-body { font-family: 'Be Vietnam Pro', 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body { font-family: 'Be Vietnam Pro', 'Segoe UI', 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
 /* ── AUTH PAGES ── */
 .auth-wrapper {
