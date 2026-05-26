@@ -1,11 +1,15 @@
 package com.clinic.service.impl;
 
+import com.clinic.dto.request.UpdateAppointmentStatusRequest;
 import com.clinic.dto.response.AppointmentResponse;
 import com.clinic.entity.Appointment;
+import com.clinic.exception.AppException;
+import com.clinic.exception.ErrorCode;
 import com.clinic.repository.AppointmentRepository;
 import com.clinic.service.AdminAppointmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -38,6 +42,18 @@ public class AdminAppointmentServiceImpl implements AdminAppointmentService {
                 .sorted((a, b) -> b.getStartTime().compareTo(a.getStartTime()))
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public AppointmentResponse updateStatus(Long id, UpdateAppointmentStatusRequest request) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
+        appointment.setStatus(request.getStatus());
+        if (request.getDoctorNote() != null) {
+            appointment.setDoctorNote(request.getDoctorNote());
+        }
+        return toResponse(appointmentRepository.save(appointment));
     }
 }
 

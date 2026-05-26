@@ -11,7 +11,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: ${JPA_DDL_AUTO:update}
     show-sql: false
   aop:
     proxy-target-class: true

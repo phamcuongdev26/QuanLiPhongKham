@@ -9,12 +9,13 @@
 
   const MENUS = {
     ADMIN: [
-      { href: 'dashboard.html',   icon: '&#9632;',   label: 'Dashboard' },
-      { href: 'users.html',       icon: '&#128100;', label: 'Quản lý Khách hàng' },
-      { href: 'sellers.html',     icon: '&#129657;', label: 'Bác sĩ' },
-      { href: 'categories.html',  icon: '&#127991;', label: 'Chuyên khoa' },
-      { href: 'audit-logs.html',  icon: '&#128203;', label: 'Lịch sử thay đổi' },
-      { href: 'profile.html',     icon: '&#128196;', label: 'Hồ sơ' },
+      { href: 'dashboard.html',          icon: '&#9632;',   label: 'Dashboard' },
+      { href: 'users.html',              icon: '&#128100;', label: 'Quản lý Khách hàng' },
+      { href: 'doctors-manage.html',     icon: '&#129657;', label: 'Bác sĩ' },
+      { href: 'categories.html',         icon: '&#127991;', label: 'Chuyên khoa' },
+      { href: 'appointments-admin.html', icon: '&#128197;', label: 'Lịch hẹn' },
+      { href: 'audit-logs.html',         icon: '&#128203;', label: 'Lịch sử thay đổi' },
+      { href: 'profile.html',            icon: '&#128196;', label: 'Hồ sơ' },
     ],
     PATIENT: [
       { href: 'specialties.html',     icon: '&#127973;', label: 'Đặt lịch khám' },

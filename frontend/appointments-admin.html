@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Lịch hẹn - Phòng Khám</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; padding:14px 24px; border-bottom:1px solid var(--border); }
+    .filter-bar select, .filter-bar input { padding:7px 12px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:.88rem; outline:none; }
+    .filter-bar select:focus, .filter-bar input:focus { border-color:var(--primary); }
+    .status-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.75rem; font-weight:700; }
+    .status-PENDING   { background:#fff8e1; color:#f39c12; }
+    .status-CONFIRMED { background:#e8f4fd; color:#2980b9; }
+    .status-COMPLETED { background:#eafaf1; color:#27ae60; }
+    .status-CANCELED  { background:#f0f0f0; color:#999; }
+    .status-REJECTED  { background:#fdecea; color:#e74c3c; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">Phòng Khám</div>
+    <nav id="sidebarNav"></nav>
+    <div class="sidebar-footer">
+      <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2>&#128197; Quản lý Lịch hẹn</h2>
+      <div class="topbar-right">
+        <span class="badge" id="roleBadge"></span>
+      </div>
+    </div>
+
+    <div class="card" style="margin:28px;">
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="&#128269; Tìm bệnh nhân, bác sĩ..." oninput="filterTable()" style="flex:1;min-width:200px;" />
+        <select id="filterStatus" onchange="filterTable()">
+          <option value="">Tất cả trạng thái</option>
+          <option value="PENDING">Chờ xác nhận</option>
+          <option value="CONFIRMED">Đã xác nhận</option>
+          <option value="COMPLETED">Hoàn thành</option>
+          <option value="CANCELED">Đã hủy</option>
+          <option value="REJECTED">Từ chối</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Bệnh nhân</th>
+              <th>Bác sĩ</th>
+              <th>Chuyên khoa</th>
+              <th>Thời gian</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="apptBody">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:#999;">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="emptyMsg" class="empty-state" style="display:none;">
+        <div class="empty-icon">&#128197;</div>
+        <p>Không có lịch hẹn nào</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ĐỔI TRẠNG THÁI -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3>Cập nhật trạng thái</h3>
+      <button class="modal-close" onclick="closeStatusModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Trạng thái mới</label>
+        <select id="newStatus" style="width:100%;padding:9px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;">
+          <option value="PENDING">Chờ xác nhận</option>
+          <option value="CONFIRMED">Xác nhận</option>
+          <option value="COMPLETED">Hoàn thành</option>
+          <option value="REJECTED">Từ chối</option>
+          <option value="CANCELED">Hủy</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Ghi chú bác sĩ (tuỳ chọn)</label>
+        <textarea id="doctorNote" rows="3" placeholder="Lý do từ chối, ghi chú..." style="width:100%;padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeStatusModal()">Hủy</button>
+      <button class="btn btn-primary" id="saveStatusBtn" onclick="saveStatus()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const API = `http://${window.location.hostname}:8080`;
+  const token = localStorage.getItem('token');
+  const role  = localStorage.getItem('role');
+  if (!token || role !== 'ADMIN') window.location.href = 'login.html';
+
+  function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
+  function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function toast(msg, type = 'success') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast${type === 'error' ? ' error' : ''}`;
+    t.innerHTML = `<span>${type === 'success' ? '&#9989;' : '&#10060;'}</span> ${msg}`;
+    c.appendChild(t); setTimeout(() => t.remove(), 3500);
+  }
+
+  const STATUS_LABEL = { PENDING:'Chờ xác nhận', CONFIRMED:'Đã xác nhận', COMPLETED:'Hoàn thành', CANCELED:'Đã hủy', REJECTED:'Từ chối' };
+
+  function fmtDate(d) {
+    if (!d) return '-';
+    return new Date(d).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+
+  let allAppts = [];
+
+  async function loadAppointments() {
+    try {
+      const res = await fetch(`${API}/api/admin/appointments`, { headers: authHeaders() });
+      if (res.status === 401 || res.status === 403) { logout(); return; }
+      const data = await res.json();
+      allAppts = Array.isArray(data) ? data : data.result || [];
+      filterTable();
+    } catch { toast('Không thể tải danh sách lịch hẹn', 'error'); }
+  }
+
+  function filterTable() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const st = document.getElementById('filterStatus').value;
+    const filtered = allAppts.filter(a => {
+      const matchQ = !q || (a.patientName || '').toLowerCase().includes(q) || (a.doctorName || '').toLowerCase().includes(q);
+      const matchSt = !st || a.status === st;
+      return matchQ && matchSt;
+    });
+    renderTable(filtered);
+  }
+
+  function renderTable(list) {
+    const tbody = document.getElementById('apptBody');
+    const empty = document.getElementById('emptyMsg');
+    if (!list.length) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    tbody.innerHTML = list.map((a, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${a.patientName || '-'}</td>
+        <td>${a.doctorName || '-'}</td>
+        <td>${a.specialtyName || '-'}</td>
+        <td>${fmtDate(a.startTime)}</td>
+        <td><span class="status-badge status-${a.status}">${STATUS_LABEL[a.status] || a.status}</span></td>
+        <td>
+          <button class="btn btn-info btn-sm" onclick="openStatusModal(${a.id}, '${a.status}', '${(a.doctorNote || '').replace(/'/g, '')}')">&#9998; Đổi</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  let editingApptId = null;
+  function openStatusModal(id, currentStatus, currentNote) {
+    editingApptId = id;
+    document.getElementById('newStatus').value = currentStatus;
+    document.getElementById('doctorNote').value = currentNote || '';
+    document.getElementById('statusModal').classList.add('open');
+  }
+  function closeStatusModal() {
+    document.getElementById('statusModal').classList.remove('open');
+    editingApptId = null;
+  }
+
+  async function saveStatus() {
+    if (!editingApptId) return;
+    const btn = document.getElementById('saveStatusBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+    try {
+      const res = await fetch(`${API}/api/admin/appointments/${editingApptId}/status`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          status: document.getElementById('newStatus').value,
+          doctorNote: document.getElementById('doctorNote').value.trim() || null
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      toast('Cập nhật trạng thái thành công!');
+      closeStatusModal();
+      loadAppointments();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally { btn.disabled = false; btn.textContent = 'Lưu'; }
+  }
+
+  document.getElementById('statusModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeStatusModal(); });
+
+  loadAppointments();
+</script>
+<script src="sidebar.js"></script>
+</body>
+</html>
