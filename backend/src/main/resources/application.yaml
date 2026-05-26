@@ -13,6 +13,8 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: false
+  aop:
+    proxy-target-class: true
   web:
     resources:
       static-locations: file:frontend/,classpath:/static/
