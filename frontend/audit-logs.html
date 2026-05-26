@@ -10,9 +10,10 @@
     .action-CREATE { background:#eafaf1; color:#27ae60; }
     .action-UPDATE { background:#e8f4fd; color:#2980b9; }
     .action-DELETE { background:#fdecea; color:#e74c3c; }
-    .entity-USER { background:#f3e5f5; color:#8e24aa; }
-    .entity-CATEGORY { background:#fff3e0; color:#e67e22; }
-    .entity-SELLER { background:#e3f2fd; color:#1565c0; }
+    .entity-USER        { background:#f3e5f5; color:#8e24aa; }
+    .entity-SPECIALTY   { background:#fff3e0; color:#e67e22; }
+    .entity-APPOINTMENT { background:#e3f2fd; color:#1565c0; }
+    .entity-DOCTOR      { background:#e8f5e9; color:#2e7d32; }
     .filter-bar { display:flex; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); align-items:flex-end; }
     .filter-bar .form-group { display:flex; flex-direction:column; gap:4px; }
     .filter-bar label { font-size:.78rem; color:var(--text-light); font-weight:600; }
@@ -62,8 +63,9 @@
             <select id="filterEntity">
               <option value="">Tất cả</option>
               <option value="USER">Tài khoản</option>
-              <option value="SELLER">Bán hàng</option>
-              <option value="CATEGORY">Danh mục</option>
+              <option value="SPECIALTY">Chuyên khoa</option>
+              <option value="APPOINTMENT">Lịch hẹn</option>
+              <option value="DOCTOR">Bác sĩ</option>
             </select>
           </div>
           <div class="form-group">
@@ -231,7 +233,7 @@
     return { CREATE:'Tạo mới', UPDATE:'Cập nhật', DELETE:'Xóa' }[a] || a;
   }
   function entityLabel(e) {
-    return { USER:'Tài khoản', SELLER:'Bán hàng', CATEGORY:'Danh mục' }[e] || e;
+    return { USER:'Tài khoản', SPECIALTY:'Chuyên khoa', APPOINTMENT:'Lịch hẹn', DOCTOR:'Bác sĩ' }[e] || e;
   }
 
   function showDiff(id) {

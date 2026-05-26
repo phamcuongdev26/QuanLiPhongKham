@@ -117,6 +117,25 @@ CREATE TABLE IF NOT EXISTS prescription_items (
   CONSTRAINT fk_pi_prescription FOREIGN KEY (prescription_id) REFERENCES prescriptions(appointment_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ── AUDIT LOGS ────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+  action         VARCHAR(20)  NOT NULL COMMENT 'CREATE | UPDATE | DELETE',
+  entity_type    VARCHAR(50)  NOT NULL COMMENT 'USER | SPECIALTY | APPOINTMENT | DOCTOR',
+  entity_id      BIGINT,
+  entity_name    VARCHAR(255),
+  admin_username VARCHAR(50),
+  admin_full_name VARCHAR(120),
+  ip_address     VARCHAR(45),
+  detail         VARCHAR(500),
+  old_value      TEXT,
+  new_value      TEXT,
+  created_at     DATETIME,
+  INDEX idx_audit_entity_type (entity_type),
+  INDEX idx_audit_action      (action),
+  INDEX idx_audit_created_at  (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ── PASSWORD RESET TOKENS ────────────────────────────────────
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
   id         BIGINT AUTO_INCREMENT PRIMARY KEY,

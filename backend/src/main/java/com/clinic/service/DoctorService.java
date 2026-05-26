@@ -13,5 +13,6 @@ public interface DoctorService {
     DoctorSummaryResponse createDoctor(AdminCreateDoctorRequest request);
     DoctorSummaryResponse updateDoctor(Long doctorUserId, AdminUpdateDoctorRequest request);
     void deleteDoctor(Long doctorUserId);
+    void toggleActive(Long doctorUserId);
 }
 

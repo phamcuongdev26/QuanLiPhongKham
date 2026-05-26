@@ -35,6 +35,12 @@ public class AdminDoctorController {
         return ResponseEntity.ok(doctorService.updateDoctor(id, request));
     }
 
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<ApiResponse<Void>> toggleActive(@PathVariable Long id) {
+        doctorService.toggleActive(id);
+        return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Cập nhật trạng thái thành công").build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         doctorService.deleteDoctor(id);

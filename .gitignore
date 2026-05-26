@@ -18,5 +18,9 @@ Thumbs.db
 .env
 *.local
 
+# RSA keys - never commit private keys
+backend/src/main/resources/keys/private.pem
+backend/src/main/resources/keys/public.pem
+
 # Claude
 .claude/

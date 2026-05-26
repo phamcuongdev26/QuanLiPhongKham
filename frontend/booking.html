@@ -177,7 +177,7 @@
     container.className = 'slot-loading';
     container.textContent = 'Đang tải khung giờ...';
     try {
-      const res = await fetch(`${API}/api/doctors/${doctorId}/slots?date=${date}&slotMinutes=30`);
+      const res = await fetch(`${API}/api/availability/doctor-slots?doctorId=${doctorId}&date=${date}&slotMinutes=30`);
       const slots = await res.json();
       container.className = '';
       if (!slots || slots.length === 0) {

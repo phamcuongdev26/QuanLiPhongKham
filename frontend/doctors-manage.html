@@ -45,11 +45,12 @@
                 <th>Chức danh</th>
                 <th>Chuyên khoa</th>
                 <th>Phí khám</th>
+                <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
             <tbody id="doctorsBody">
-              <tr><td colspan="7" style="text-align:center;padding:32px;color:#999;">Đang tải...</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:32px;color:#999;">Đang tải...</td></tr>
             </tbody>
           </table>
         </div>
@@ -131,7 +132,7 @@
   </div>
 </div>
 
-<!-- CONFIRM DELETE -->
+<!-- CONFIRM DEACTIVATE -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
     <div class="confirm-icon">&#9888;</div>
@@ -139,7 +140,7 @@
     <p id="confirmMsg">Bạn có chắc muốn xóa bác sĩ này không?</p>
     <div class="confirm-actions">
       <button class="btn btn-outline" onclick="closeConfirm()">Hủy</button>
-      <button class="btn btn-danger" id="confirmOkBtn">Xóa</button>
+      <button class="btn btn-danger" id="confirmOkBtn">xóa</button>
     </div>
   </div>
 </div>
@@ -226,9 +227,12 @@
         <td>${d.specialtyName || '-'}</td>
         <td>${fmtFee(d.consultationFee)}</td>
         <td>
+          <button class="btn ${d.isActive ? 'btn-success' : 'btn-warning'} btn-sm" onclick="toggleActive(${d.id})">${d.isActive ? 'Hoạt động' : 'Không hoạt động'}</button>
+        </td>
+        <td>
           <div class="actions">
-            <button class="btn btn-info btn-sm" onclick="openEditModal(${d.id})" title="Sửa">&#9998;</button>
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${d.id}, '${(d.fullName || '').replace(/'/g, '')}')" title="Xóa">&#128465;</button>
+            <button class="btn btn-info btn-sm" onclick="openEditModal(${d.id})">Sửa</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${d.id}, '${(d.fullName || '').replace(/'/g, '')}')" ${!d.isActive ? 'disabled' : ''}>Xóa</button>
           </div>
         </td>
       </tr>
@@ -341,6 +345,15 @@
     el.textContent = msg; el.className = 'alert alert-error show';
   }
 
+  async function toggleActive(id) {
+    try {
+      const res = await fetch(`${API}/api/admin/doctors/${id}/toggle-active`, { method: 'PATCH', headers: authHeaders() });
+      if (!res.ok) throw new Error('Thao tác thất bại');
+      toast('Cập nhật trạng thái thành công!');
+      loadDoctors();
+    } catch (err) { toast(err.message, 'error'); }
+  }
+
   let deleteTarget = null;
   function confirmDelete(id, name) {
     deleteTarget = id;
@@ -351,10 +364,9 @@
   document.getElementById('confirmOkBtn').onclick = async () => {
     if (!deleteTarget) return;
     try {
-      const res = await fetch(`${API}/api/admin/doctors/${deleteTarget}`, { method: 'DELETE', headers: authHeaders() });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Xóa thất bại');
-      toast('Xóa bác sĩ thành công!'); closeConfirm(); loadDoctors();
+      const res = await fetch(`${API}/api/admin/doctors/${deleteTarget}/toggle-active`, { method: 'PATCH', headers: authHeaders() });
+      if (!res.ok) throw new Error('Thao tác thất bại');
+      toast('Đã xóa bác sĩ!'); closeConfirm(); loadDoctors();
     } catch (err) { toast(err.message, 'error'); closeConfirm(); }
   };
 

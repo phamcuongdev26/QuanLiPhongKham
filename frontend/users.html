@@ -31,12 +31,6 @@
         <div class="table-controls">
           <input type="text" class="search-input" id="searchInput" placeholder="&#128269; Tìm theo username, email, họ tên..."
                  oninput="resetAndLoad()" />
-          <select id="filterRole" onchange="resetAndLoad()" style="padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;">
-            <option value="">Tất cả role</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="USER">USER</option>
-            <option value="SELLER">SELLER</option>
-          </select>
           <select id="filterStatus" onchange="resetAndLoad()" style="padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:.9rem;">
             <option value="">Tất cả trạng thái</option>
             <option value="active">Hoạt động</option>
@@ -52,7 +46,6 @@
                 <th>Họ tên</th>
                 <th>Email</th>
                 <th>SĐT</th>
-                <th>Role</th>
                 <th>Trạng thái</th>
                 <th>Ngày tạo</th>
                 <th>Thao tác</th>
@@ -109,12 +102,8 @@
             <label>Số điện thoại</label>
             <input type="text" id="f_phone" placeholder="0909xxxxxx" />
           </div>
-          <div class="form-group">
-            <label>Role</label>
-            <select id="f_role">
-              <option value="USER">USER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
+          <div class="form-group" style="display:none;">
+            <select id="f_role"><option value="PATIENT" selected>PATIENT</option></select>
           </div>
         </div>
         <div class="form-group">
@@ -136,7 +125,7 @@
   </div>
 </div>
 
-<!-- CONFIRM DELETE -->
+<!-- CONFIRM DEACTIVATE -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
     <div class="confirm-icon">&#9888;</div>
@@ -144,7 +133,7 @@
     <p id="confirmMsg">Bạn có chắc muốn xóa user này không?</p>
     <div class="confirm-actions">
       <button class="btn btn-outline" onclick="closeConfirm()">Hủy</button>
-      <button class="btn btn-danger" id="confirmOkBtn">Xóa</button>
+      <button class="btn btn-danger" id="confirmOkBtn">xóa</button>
     </div>
   </div>
 </div>
@@ -186,11 +175,9 @@
   async function loadUsers() {
     const q = document.getElementById('searchInput').value.trim();
     const status = document.getElementById('filterStatus').value;
-    const roleFilter = document.getElementById('filterRole').value;
     const params = new URLSearchParams({ page: currentPage, size: PAGE_SIZE });
     if (q) params.append('q', q);
     if (status) params.append('status', status);
-    if (roleFilter) params.append('role', roleFilter);
 
     try {
       const res = await fetch(`${API}/api/admin/users?${params}`, { headers: authHeaders() });
@@ -218,14 +205,14 @@
         <td>${u.fullName || '-'}</td>
         <td>${u.email}</td>
         <td>${u.phoneNumber || '-'}</td>
-        <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
-        <td><span class="badge ${u.isActive ? 'badge-active' : 'badge-inactive'}">${u.isActive ? 'Hoạt động' : 'Bị khóa'}</span></td>
+        <td>
+          <button class="btn ${u.isActive ? 'btn-success' : 'btn-warning'} btn-sm" onclick="toggleActive(${u.id})">${u.isActive ? 'Hoạt động' : 'Không hoạt động'}</button>
+        </td>
         <td>${fmtDate(u.createdAt)}</td>
         <td>
           <div class="actions">
-            <button class="btn btn-info btn-sm" onclick="openEditModal(${u.id})" title="Sửa">&#9998;</button>
-            <button class="btn btn-warning btn-sm" onclick="toggleActive(${u.id})" title="${u.isActive ? 'Khóa' : 'Mở khóa'}">${u.isActive ? '&#128274;' : '&#128275;'}</button>
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${u.id}, '${u.username}')" title="Xóa">&#128465;</button>
+            <button class="btn btn-info btn-sm" onclick="openEditModal(${u.id})">Sửa</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${u.id}, '${u.username}')" ${!u.isActive ? 'disabled' : ''}>Xóa</button>
           </div>
         </td>
       </tr>
@@ -349,10 +336,9 @@
   document.getElementById('confirmOkBtn').onclick = async () => {
     if (!deleteTarget) return;
     try {
-      const res = await fetch(`${API}/api/admin/users/${deleteTarget}`, { method: 'DELETE', headers: authHeaders() });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Xóa thất bại');
-      toast('Xóa user thành công!'); closeConfirm(); loadUsers();
+      const res = await fetch(`${API}/api/admin/users/${deleteTarget}/toggle-active`, { method: 'PATCH', headers: authHeaders() });
+      if (!res.ok) throw new Error('Thao tác thất bại');
+      toast('Đã xóa user!'); closeConfirm(); loadUsers();
     } catch (err) { toast(err.message, 'error'); closeConfirm(); }
   };
 

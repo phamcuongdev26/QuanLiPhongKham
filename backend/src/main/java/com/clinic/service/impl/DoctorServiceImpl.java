@@ -12,8 +12,10 @@ import com.clinic.exception.ErrorCode;
 import com.clinic.repository.DoctorProfileRepository;
 import com.clinic.repository.SpecialtyRepository;
 import com.clinic.repository.UserRepository;
+import com.clinic.service.AuditLogService;
 import com.clinic.service.DoctorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,18 +29,26 @@ public class DoctorServiceImpl implements DoctorService {
     private final SpecialtyRepository specialtyRepository;
     private final DoctorProfileRepository doctorProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
+
+    private String currentAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
 
     private DoctorSummaryResponse toSummary(DoctorProfile profile) {
         User doctor = profile.getUser();
         return DoctorSummaryResponse.builder()
                 .id(doctor.getId())
+                .username(doctor.getUsername())
                 .fullName(doctor.getFullName())
                 .email(doctor.getEmail())
+                .phoneNumber(doctor.getPhoneNumber())
                 .specialtyId(profile.getSpecialty() == null ? null : profile.getSpecialty().getId())
                 .specialtyName(profile.getSpecialty() == null ? null : profile.getSpecialty().getName())
                 .consultationFee(profile.getConsultationFee())
                 .title(profile.getTitle())
                 .bio(profile.getBio())
+                .isActive(doctor.isActive())
                 .build();
     }
 
@@ -93,6 +103,11 @@ public class DoctorServiceImpl implements DoctorService {
                 .build();
         doctorProfileRepository.save(profile);
 
+        auditLogService.log("CREATE", "DOCTOR", doctorUser.getId(), doctorUser.getFullName(),
+                currentAdmin(), null,
+                "Thêm bác sĩ: " + doctorUser.getUsername() + " - " + doctorUser.getFullName(),
+                null, null);
+
         return toSummary(profile);
     }
 
@@ -117,7 +132,14 @@ public class DoctorServiceImpl implements DoctorService {
         profile.setTitle(request.getTitle());
         profile.setBio(request.getBio());
         profile.setConsultationFee(request.getConsultationFee());
-        return toSummary(doctorProfileRepository.save(profile));
+        DoctorSummaryResponse result = toSummary(doctorProfileRepository.save(profile));
+
+        auditLogService.log("UPDATE", "DOCTOR", user.getId(), user.getFullName(),
+                currentAdmin(), null,
+                "Cập nhật bác sĩ: " + user.getFullName(),
+                null, null);
+
+        return result;
     }
 
     @Override
@@ -127,8 +149,31 @@ public class DoctorServiceImpl implements DoctorService {
         if (user.getRole() != Role.DOCTOR) {
             throw new AppException(ErrorCode.DOCTOR_NOT_FOUND);
         }
+        String name = user.getFullName();
         doctorProfileRepository.deleteById(doctorUserId);
         userRepository.delete(user);
+
+        auditLogService.log("DELETE", "DOCTOR", doctorUserId, name,
+                currentAdmin(), null,
+                "Xóa bác sĩ: " + name,
+                null, null);
+    }
+
+    @Override
+    public void toggleActive(Long doctorUserId) {
+        User user = userRepository.findById(doctorUserId)
+                .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+        if (user.getRole() != Role.DOCTOR) {
+            throw new AppException(ErrorCode.DOCTOR_NOT_FOUND);
+        }
+        boolean wasActive = user.isActive();
+        user.setActive(!wasActive);
+        userRepository.save(user);
+
+        auditLogService.log("UPDATE", "DOCTOR", doctorUserId, user.getFullName(),
+                currentAdmin(), null,
+                (wasActive ? "Khóa" : "Mở khóa") + " bác sĩ: " + user.getFullName(),
+                null, null);
     }
 }
 
