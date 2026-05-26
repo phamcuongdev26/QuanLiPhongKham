@@ -1,7 +1,6 @@
 package com.clinic.controller;
 
 import com.clinic.dto.request.CreateAppointmentRequest;
-import com.clinic.dto.request.UpdateAppointmentStatusRequest;
 import com.clinic.dto.response.ApiResponse;
 import com.clinic.dto.response.AppointmentResponse;
 import com.clinic.service.AppointmentService;
@@ -42,10 +41,5 @@ public class PatientAppointmentController {
         return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Hủy lịch thành công").build());
     }
 
-    @PutMapping("/{id}/status")
-    public ResponseEntity<AppointmentResponse> updateStatus(@PathVariable Long id,
-                                                            @Valid @RequestBody UpdateAppointmentStatusRequest request) {
-        return ResponseEntity.ok(appointmentService.updateDoctorStatus(username(), id, request));
-    }
-}
 
+}
