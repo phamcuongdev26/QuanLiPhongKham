@@ -11,8 +11,8 @@
     ADMIN: [
       { href: 'dashboard.html',      label: 'Dashboard' },
       { href: 'users.html',          label: 'Quản lý Khách hàng' },
-      { href: 'sellers.html',        label: 'Quản lý Bác sĩ' },
-      { href: 'categories.html',     label: 'Quản lý Chuyên khoa' },
+      { href: 'doctors-admin.html',    label: 'Quản lý Bác sĩ' },
+      { href: 'specialties-admin.html', label: 'Quản lý Chuyên khoa' },
       { href: 'appointments.html',   label: 'Lịch hẹn' },
       { href: 'audit-logs.html',     label: 'Lịch sử thay đổi' },
       { href: 'profile.html',        label: 'Hồ sơ' },
