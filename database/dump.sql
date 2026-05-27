@@ -68,10 +68,9 @@ CREATE TABLE `audit_logs` (
   `entity_name` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `admin_username` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `admin_full_name` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `detail` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `old_value` text COLLATE utf8mb4_unicode_ci,
   `new_value` text COLLATE utf8mb4_unicode_ci,
-  `ip_address` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `detail` text COLLATE utf8mb4_unicode_ci,
   `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_audit_logs_created_at` (`created_at`),
@@ -85,7 +84,14 @@ CREATE TABLE `audit_logs` (
 
 LOCK TABLES `audit_logs` WRITE;
 /*!40000 ALTER TABLE `audit_logs` DISABLE KEYS */;
-INSERT INTO `audit_logs` VALUES (1,'UPDATE','DOCTOR',2,'BS. Nguyễn Văn Minh','admin','Super Admin','Cập nhật bác sĩ BS. Nguyễn Văn Minh','{\"username\":\"bs_minh\",\"fullName\":\"BS. Nguyễn Văn Minh\",\"email\":\"bs.minh@clinic.com\",\"phoneNumber\":null,\"isActive\":true,\"specialty\":\"Tim mạch\",\"title\":\"Tiến sĩ, Bác sĩ CKI\",\"bio\":\"Hơn 10 năm kinh nghiệm điều trị bệnh lý tim mạch tại các bệnh viện lớn.\",\"consultationFee\":300000}','{\"username\":\"bs_minh\",\"fullName\":\"BS. Nguyễn Văn Minh\",\"email\":\"bs.minh@clinic.com\",\"phoneNumber\":null,\"isActive\":true,\"specialty\":\"Tim mạch\",\"title\":\"Tiến sĩ, Bác sĩ CKIaa\",\"bio\":\"Hơn 10 năm kinh nghiệm điều trị bệnh lý tim mạch tại các bệnh viện lớn.\",\"consultationFee\":300000}',NULL,'2026-05-26 20:04:34'),(2,'UPDATE','DOCTOR',3,'BS. Trần Thị Lan','admin','Super Admin','Cập nhật bác sĩ: BS. Trần Thị Lan','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"active\":true}','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"active\":true}','0:0:0:0:0:0:0:1','2026-05-27 04:09:42'),(3,'DELETE','DOCTOR',3,'BS. Trần Thị Lan','admin','Super Admin','Xóa bác sĩ: BS. Trần Thị Lan','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":true}',NULL,'0:0:0:0:0:0:0:1','2026-05-27 04:13:01'),(4,'UPDATE','DOCTOR',3,'BS. Trần Thị Lan','admin','Super Admin','Cập nhật bác sĩ: BS. Trần Thị Lan','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":false}','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":true}','0:0:0:0:0:0:0:1','2026-05-27 04:13:09'),(5,'UPDATE','DOCTOR',3,'BS. Trần Thị La','admin','Super Admin','Cập nhật bác sĩ: BS. Trần Thị La','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":true}','{\"id\":3,\"fullName\":\"BS. Trần Thị La\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":true}','0:0:0:0:0:0:0:1','2026-05-27 04:13:18'),(6,'DELETE','DOCTOR',3,'BS. Trần Thị La','admin','Super Admin','Xóa bác sĩ: BS. Trần Thị La','{\"id\":3,\"fullName\":\"BS. Trần Thị La\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":true}',NULL,'0:0:0:0:0:0:0:1','2026-05-27 04:16:56'),(7,'UPDATE','DOCTOR',3,'BS. Trần Thị Lan','admin','Super Admin','Cập nhật bác sĩ: BS. Trần Thị Lan','{\"id\":3,\"fullName\":\"BS. Trần Thị La\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":false}','{\"id\":3,\"fullName\":\"BS. Trần Thị Lan\",\"email\":\"bs.lan@clinic.com\",\"specialtyId\":30,\"specialtyName\":\"Thần kinh\",\"consultationFee\":350000,\"title\":\"Thạc sĩ, Bác sĩ CKII\",\"bio\":\"Chuyên gia đầu ngành về các bệnh đột quỵ và rối loạn thần kinh.\",\"isActive\":true}','0:0:0:0:0:0:0:1','2026-05-27 04:19:09');
+INSERT INTO `audit_logs` (`id`,`action`,`entity_type`,`entity_id`,`entity_name`,`admin_username`,`admin_full_name`,`detail`,`created_at`) VALUES
+(1,"UPDATE","DOCTOR",2,"BS. Nguyễn Văn Minh","admin","Super Admin","Cập nhật bác sĩ BS. Nguyễn Văn Minh","2026-05-26 20:04:34"),
+(2,"UPDATE","DOCTOR",3,"BS. Trần Thị Lan","admin","Super Admin","Cập nhật bác sĩ: BS. Trần Thị Lan","2026-05-27 04:09:42"),
+(3,"DELETE","DOCTOR",3,"BS. Trần Thị Lan","admin","Super Admin","Xóa bác sĩ: BS. Trần Thị Lan","2026-05-27 04:13:01"),
+(4,"UPDATE","DOCTOR",3,"BS. Trần Thị Lan","admin","Super Admin","Cập nhật bác sĩ: BS. Trần Thị Lan","2026-05-27 04:13:09"),
+(5,"UPDATE","DOCTOR",3,"BS. Trần Thị La","admin","Super Admin","Cập nhật bác sĩ: BS. Trần Thị La","2026-05-27 04:13:18"),
+(6,"DELETE","DOCTOR",3,"BS. Trần Thị La","admin","Super Admin","Xóa bác sĩ: BS. Trần Thị La","2026-05-27 04:16:56"),
+(7,"UPDATE","DOCTOR",3,"BS. Trần Thị Lan","admin","Super Admin","Cập nhật bác sĩ: BS. Trần Thị Lan","2026-05-27 04:19:09");
 /*!40000 ALTER TABLE `audit_logs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -218,11 +224,10 @@ CREATE TABLE `notifications` (
   `user_id` bigint NOT NULL,
   `type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `title` varchar(300) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `body` varchar(2000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `is_read` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` datetime DEFAULT NULL,
   `message` varchar(2000) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `ref_appointment_id` bigint DEFAULT NULL,
+  `is_read` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_notifications_user_created` (`user_id`,`created_at`),
   CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
