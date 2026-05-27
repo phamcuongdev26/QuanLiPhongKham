@@ -1,95 +1,95 @@
-# Clinic Management System
+# Hệ thống quản lý phòng khám/bệnh viện
 
-Hệ thống quản lý phòng khám/bệnh viện nhỏ, gồm backend Spring Boot, MySQL và frontend HTML/CSS/JavaScript thuần.
+Ứng dụng gồm backend Spring Boot, frontend HTML/CSS/JavaScript thuần và cơ sở dữ liệu MySQL. Dự án đã được đóng gói Docker để người khác pull code về có thể chạy không cần cài Java, Maven hay MySQL trên máy.
 
-## Công nghệ
+## Yêu cầu
 
-- Backend: Spring Boot 3.5, Spring Security, JWT/RSA, Spring Data JPA
-- Database: MySQL 8
-- Frontend: HTML, CSS, JavaScript
-- Runtime khuyến nghị: Docker Compose
+- Docker Desktop
+- Git
 
-## Cấu trúc
-
-```text
-QuanLiPhongKham/
-├── backend/            Spring Boot API
-├── frontend/           HTML pages
-├── schema.sql          Database schema và dữ liệu mẫu
-├── docker-compose.yml  MySQL + application
-└── Dockerfile
-```
-
-## Chạy bằng Docker
+## Chạy nhanh bằng Docker
 
 ```powershell
-cd D:\quanlyBV\QuanLiPhongKham
+git clone <link-repository>
+cd QuanLiPhongKham
 docker compose up -d --build
 ```
 
-Mở ứng dụng:
+Mở trình duyệt:
 
 ```text
-http://localhost:8080/login.html
+http://localhost:8080
+```
+
+Nếu máy đã dùng cổng `8080`, tạo file `.env` từ `.env.example` rồi đổi `APP_PORT`, ví dụ:
+
+```env
+APP_PORT=8081
+MYSQL_PORT=3307
+```
+
+Sau đó chạy lại:
+
+```powershell
+docker compose up -d --build
+```
+
+Khi đổi `APP_PORT=8081`, mở:
+
+```text
+http://localhost:8081
 ```
 
 ## Tài khoản mẫu
 
-| Vai trò | Username | Password |
-| --- | --- | --- |
-| Admin | `admin` | `Admin@123` |
-| Bác sĩ | `bs_minh` | `Admin@123` |
-| Bác sĩ | `bs_lan` | `Admin@123` |
-| Bệnh nhân | `patient1` | `Admin@123` |
+Tất cả tài khoản mẫu dùng mật khẩu:
 
-## API chính
+```text
+Admin@123
+```
 
-### Public/Auth
+| Vai trò | Username |
+| --- | --- |
+| Admin | `admin` |
+| Bác sĩ | `bs_minh` |
+| Bác sĩ | `bs_lan` |
+| Bệnh nhân | `patient1` |
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/forgot-password`
-- `POST /api/auth/reset-password`
-- `GET /api/specialties`
-- `GET /api/doctors`
-- `GET /api/doctors/{id}`
-- `GET /api/availability/doctor-slots?doctorId=&date=&slotMinutes=`
+## Reset dữ liệu Docker
 
-### Admin
+MySQL chỉ chạy file `schema.sql` khi volume database được tạo lần đầu. Nếu đã từng chạy bản cũ và muốn nạp lại dữ liệu mẫu:
 
-- `GET /api/admin/stats`
-- `GET /api/admin/users`
-- `POST /api/admin/users`
-- `PUT /api/admin/users/{id}`
-- `PATCH /api/admin/users/{id}/toggle-active`
-- `GET /api/admin/doctors`
-- `POST /api/admin/doctors`
-- `PUT /api/admin/doctors/{id}`
-- `PATCH /api/admin/doctors/{id}/toggle-active`
-- `GET /api/admin/specialties`
-- `POST /api/admin/specialties`
-- `DELETE /api/admin/specialties/{id}`
-- `GET /api/admin/appointments`
-- `PATCH /api/admin/appointments/{id}/status`
-- `GET /api/admin/audit-logs`
+```powershell
+docker compose down -v
+docker compose up -d --build
+```
 
-### Doctor
+Lệnh `down -v` sẽ xóa dữ liệu database cũ trong Docker volume.
 
-- `GET /api/doctor/appointments/today?date=YYYY-MM-DD`
-- `PATCH /api/doctor/appointments/{id}/status`
-- `PUT /api/doctor/medical/appointments/{id}/record`
-- `PUT /api/doctor/medical/appointments/{id}/prescription`
-- `GET /api/doctor/schedule/shifts`
-- `POST /api/doctor/schedule/shifts`
-- `GET /api/doctor/schedule/days-off`
-- `POST /api/doctor/schedule/days-off`
+## Các service Docker
 
-### Patient
+- `app`: Spring Boot + frontend, mặc định chạy ở `http://localhost:8080`
+- `db`: MySQL 8, mặc định map ra máy host ở cổng `3307`
 
-- `GET /api/appointments`
-- `POST /api/appointments`
-- `DELETE /api/appointments/{id}`
-- `GET /api/patient/notifications`
-- `GET /api/patient/notifications/unread-count`
-- `PATCH /api/patient/notifications/{id}/read`
-- `PATCH /api/patient/notifications/read-all`
+Ứng dụng kết nối database bằng network nội bộ Docker, nên không cần cài MySQL trên máy.
+
+## Lệnh kiểm tra
+
+```powershell
+docker compose ps
+docker compose logs -f app
+docker compose logs -f db
+```
+
+## Cấu trúc chính
+
+```text
+QuanLiPhongKham/
+├── backend/             Spring Boot API
+├── frontend/            HTML, CSS, JavaScript
+├── schema.sql           Schema và dữ liệu mẫu
+├── Dockerfile           Build backend và đóng frontend vào image
+├── docker-compose.yml   Chạy app + MySQL
+├── .env.example         Cấu hình cổng và database mẫu
+└── README.md
+```

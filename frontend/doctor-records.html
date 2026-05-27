@@ -7,16 +7,25 @@
   <link rel="stylesheet" href="style.css" />
   <style>
     .records-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 28px; }
-    textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius);
-      font-size: .9rem; resize: vertical; outline: none; font-family: inherit; }
+    textarea {
+      width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: var(--radius); font-size: .9rem; resize: vertical;
+      outline: none; font-family: inherit;
+    }
     textarea:focus { border-color: var(--primary); }
     .drug-row {
-      display: grid; grid-template-columns: 1fr 80px 120px 90px 1fr 36px;
+      display: grid; grid-template-columns: 1fr 80px 120px 90px 1fr 52px;
       gap: 6px; align-items: center; margin-bottom: 8px;
     }
-    .drug-row input { padding: 7px 10px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: .82rem; outline: none; }
+    .drug-row input {
+      padding: 7px 10px; border: 1.5px solid var(--border);
+      border-radius: var(--radius); font-size: .82rem; outline: none;
+    }
     .drug-row input:focus { border-color: var(--primary); }
-    .remove-drug { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 4px; }
+    .remove-drug {
+      background: none; border: none; color: var(--danger);
+      font-size: .82rem; cursor: pointer; padding: 4px;
+    }
     .appt-info-bar {
       background: var(--white); border-radius: 10px; padding: 16px 20px;
       margin: 20px 28px 0; box-shadow: var(--shadow);
@@ -24,6 +33,19 @@
     }
     .appt-info-bar span { color: var(--text-light); }
     .appt-info-bar strong { color: var(--text); }
+    .record-picker { margin: 20px 28px 0; }
+    .record-list { display: grid; gap: 10px; }
+    .record-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 14px 16px; border: 1px solid var(--border);
+      border-radius: var(--radius); background: var(--white);
+    }
+    .record-item strong { display: block; margin-bottom: 4px; }
+    .record-item small { color: var(--text-light); }
+    @media (max-width: 900px) {
+      .records-layout { grid-template-columns: 1fr; }
+      .drug-row { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -50,8 +72,9 @@
       <span>Đang tải thông tin lịch hẹn...</span>
     </div>
 
+    <div class="record-picker" id="recordPicker" style="display:none;"></div>
+
     <div class="records-layout">
-      <!-- Medical Record -->
       <div class="card" style="padding:24px;">
         <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Hồ sơ bệnh án</h3>
         <div id="alertRecord" class="alert"></div>
@@ -66,7 +89,6 @@
         <button class="btn btn-primary" onclick="saveRecord()">Lưu hồ sơ</button>
       </div>
 
-      <!-- Prescription -->
       <div class="card" style="padding:24px;">
         <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Đơn thuốc</h3>
         <div id="alertPrx" class="alert"></div>
@@ -76,7 +98,7 @@
         </div>
 
         <div style="margin-bottom:8px;font-size:.85rem;font-weight:600;">Danh sách thuốc</div>
-        <div style="display:grid;grid-template-columns:1fr 80px 120px 90px 1fr 36px;gap:6px;margin-bottom:6px;">
+        <div style="display:grid;grid-template-columns:1fr 80px 120px 90px 1fr 52px;gap:6px;margin-bottom:6px;">
           <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Tên thuốc</span>
           <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Liều</span>
           <span style="font-size:.75rem;color:var(--text-light);font-weight:600;">Tần suất</span>
@@ -96,53 +118,97 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  const API = `http://${window.location.hostname}:8080`;
+  const API = window.location.origin;
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
-  const username = localStorage.getItem('username');
+  const role = (localStorage.getItem('role') || '').trim().toUpperCase();
 
   if (!token || role !== 'DOCTOR') window.location.href = 'login.html';
 
   function logout() { localStorage.clear(); window.location.href = 'login.html'; }
-
   function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
 
   function toast(msg, type = 'success') {
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `${msg}`;
+    t.textContent = msg;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
 
   const params = new URLSearchParams(location.search);
-  const appointmentId = params.get('appointmentId');
-  if (!appointmentId) window.location.href = 'doctor-appointments.html';
+  let appointmentId = params.get('appointmentId');
 
   function fmtDateTime(dt) {
     if (!dt) return '-';
     const d = new Date(dt);
-    return d.toLocaleString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+    return d.toLocaleString('vi-VN', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
   }
 
   async function loadApptInfo() {
     const bar = document.getElementById('apptInfoBar');
+    const picker = document.getElementById('recordPicker');
+
+    if (!appointmentId) {
+      bar.innerHTML = '<span>Chọn một lịch hẹn đã hoàn thành để ghi hoặc cập nhật hồ sơ bệnh án.</span>';
+      picker.style.display = 'block';
+      await loadCompletedAppointments();
+      return;
+    }
+
+    picker.style.display = 'none';
     try {
-      const res = await fetch(`${API}/api/doctor/appointments/today`, { headers: authHeaders() });
-      const list = await res.json();
-      const appt = list.find(a => String(a.id) === String(appointmentId));
-      if (!appt) { bar.innerHTML = `<span>Lịch hẹn #${appointmentId}</span>`; return; }
+      const res = await fetch(`${API}/api/doctor/appointments/${appointmentId}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const appt = await res.json();
+      if (!res.ok) throw new Error(appt.message || 'Không thể tải lịch hẹn');
+
       bar.innerHTML = `
-        <span>Bệnh nhân: <strong>${appt.patientName}</strong></span>
-        <span>Bác sĩ: <strong>${appt.doctorName}</strong></span>
+        <span>Bệnh nhân: <strong>${appt.patientName || '-'}</strong></span>
+        <span>Bác sĩ: <strong>${appt.doctorName || '-'}</strong></span>
         <span>Chuyên khoa: <strong>${appt.specialtyName || '-'}</strong></span>
         <span>Giờ khám: <strong>${fmtDateTime(appt.startTime)}</strong></span>
         ${appt.symptomDescription ? `<span>Triệu chứng: <strong>${appt.symptomDescription}</strong></span>` : ''}
       `;
     } catch (err) {
-      bar.innerHTML = `<span>Lịch hẹn #${appointmentId}</span>`;
+      bar.innerHTML = `<span>${err.message || `Lịch hẹn #${appointmentId}`}</span>`;
     }
+  }
+
+  async function loadCompletedAppointments() {
+    const picker = document.getElementById('recordPicker');
+    try {
+      const res = await fetch(`${API}/api/doctor/appointments`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const list = await res.json();
+      const completed = Array.isArray(list) ? list.filter(a => a.status === 'COMPLETED') : [];
+
+      if (!completed.length) {
+        picker.innerHTML = '<div class="card" style="padding:20px;text-align:center;color:var(--text-light);">Chưa có lịch hẹn hoàn thành để lập hồ sơ bệnh án.</div>';
+        return;
+      }
+
+      picker.innerHTML = `<div class="record-list">${completed.map(a => `
+        <div class="record-item">
+          <div>
+            <strong>${a.patientName || '-'}</strong>
+            <small>${a.specialtyName || '-'} - ${fmtDateTime(a.startTime)}</small>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="selectAppointment(${a.id})">Mở hồ sơ</button>
+        </div>
+      `).join('')}</div>`;
+    } catch (err) {
+      picker.innerHTML = '<div class="card" style="padding:20px;color:var(--danger);">Không thể tải danh sách hồ sơ bệnh án.</div>';
+    }
+  }
+
+  function selectAppointment(id) {
+    appointmentId = String(id);
+    history.replaceState(null, '', `doctor-records.html?appointmentId=${appointmentId}`);
+    loadApptInfo();
   }
 
   function addDrug() {
@@ -155,7 +221,7 @@
       <input type="text" placeholder="2 lần/ngày" class="drug-freq" />
       <input type="text" placeholder="7 ngày" class="drug-dur" />
       <input type="text" placeholder="Uống sau ăn" class="drug-inst" />
-      <button class="remove-drug" onclick="this.closest('.drug-row').remove()">Đóng</button>
+      <button class="remove-drug" onclick="this.closest('.drug-row').remove()">Xóa</button>
     `;
     container.appendChild(row);
   }
@@ -163,6 +229,7 @@
   addDrug();
 
   async function saveRecord() {
+    if (!appointmentId) { toast('Vui lòng chọn lịch hẹn trước khi lưu hồ sơ', 'error'); return; }
     const alertEl = document.getElementById('alertRecord');
     alertEl.className = 'alert';
     const body = {
@@ -183,13 +250,18 @@
   }
 
   async function savePrescription() {
+    if (!appointmentId) { toast('Vui lòng chọn lịch hẹn trước khi lưu đơn thuốc', 'error'); return; }
     const alertEl = document.getElementById('alertPrx');
     alertEl.className = 'alert';
     const rows = document.querySelectorAll('.drug-row');
     const items = [];
     for (const row of rows) {
       const name = row.querySelector('.drug-name').value.trim();
-      if (!name) { alertEl.textContent = 'Tên thuốc không được để trống'; alertEl.className = 'alert alert-error show'; return; }
+      if (!name) {
+        alertEl.textContent = 'Tên thuốc không được để trống';
+        alertEl.className = 'alert alert-error show';
+        return;
+      }
       items.push({
         drugName: name,
         dosage: row.querySelector('.drug-dosage').value.trim() || null,

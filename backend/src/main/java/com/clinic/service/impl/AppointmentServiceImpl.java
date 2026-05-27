@@ -101,6 +101,10 @@ public class AppointmentServiceImpl implements AppointmentService {
                 "Đặt lịch thành công",
                 "Lịch hẹn với bác sĩ " + doctor.getFullName() + " lúc " + saved.getStartTime() + " đang chờ xác nhận.",
                 saved.getId());
+        notificationService.send(doctor, NotificationType.APPOINTMENT_CREATED,
+                "Có lịch khám mới",
+                "Bệnh nhân " + patient.getFullName() + " đã đặt lịch khám lúc " + saved.getStartTime() + ".",
+                saved.getId());
         return toResponse(saved);
     }
 
@@ -130,17 +134,49 @@ public class AppointmentServiceImpl implements AppointmentService {
                 "Đã huỷ lịch hẹn",
                 "Bạn đã huỷ lịch hẹn lúc " + appointment.getStartTime() + ".",
                 appointment.getId());
+        notificationService.send(appointment.getDoctor(), NotificationType.APPOINTMENT_CANCELED,
+                "Bệnh nhân đã huỷ lịch",
+                "Bệnh nhân " + patient.getFullName() + " đã huỷ lịch khám lúc " + appointment.getStartTime() + ".",
+                appointment.getId());
     }
 
     @Override
     public List<AppointmentResponse> listDoctorToday(String doctorUsername, LocalDate date) {
         User doctor = loadByUsername(doctorUsername);
+        if (doctor.getRole() != Role.DOCTOR) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         LocalDate target = date == null ? LocalDate.now() : date;
         LocalDateTime from = target.atStartOfDay();
         LocalDateTime to = target.atTime(LocalTime.MAX);
         return appointmentRepository.findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(doctor.getId(), from, to).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Override
+    public List<AppointmentResponse> listForDoctor(String doctorUsername) {
+        User doctor = loadByUsername(doctorUsername);
+        if (doctor.getRole() != Role.DOCTOR) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        return appointmentRepository.findByDoctor_IdOrderByStartTimeDesc(doctor.getId()).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    public AppointmentResponse getForDoctor(String doctorUsername, Long appointmentId) {
+        User doctor = loadByUsername(doctorUsername);
+        if (doctor.getRole() != Role.DOCTOR) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
+        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        return toResponse(appointment);
     }
 
     @Override

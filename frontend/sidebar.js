@@ -1,32 +1,35 @@
 (function () {
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const role = (localStorage.getItem('role') || '').trim().toUpperCase();
   const username = localStorage.getItem('username');
 
-  if (!token) { window.location.href = 'login.html'; return; }
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
 
   const page = location.pathname.split('/').pop() || '';
 
   const MENUS = {
     ADMIN: [
-      { href: 'dashboard.html',          label: 'Dashboard' },
-      { href: 'users.html',              label: 'Người dùng' },
-      { href: 'doctors-manage.html',     label: 'Bác sĩ' },
+      { href: 'dashboard.html', label: 'Dashboard' },
+      { href: 'users.html', label: 'Người dùng' },
+      { href: 'doctors-manage.html', label: 'Bác sĩ' },
       { href: 'specialties-manage.html', label: 'Chuyên khoa' },
       { href: 'appointments-admin.html', label: 'Lịch hẹn' },
-      { href: 'audit-logs.html',         label: 'Lịch sử thay đổi' },
-      { href: 'profile.html',            label: 'Hồ sơ' },
+      { href: 'audit-logs.html', label: 'Lịch sử thay đổi' },
+      { href: 'profile.html', label: 'Hồ sơ' },
     ],
     PATIENT: [
-      { href: 'specialties.html',     label: 'Đặt lịch khám' },
+      { href: 'specialties.html', label: 'Đặt lịch khám' },
       { href: 'my-appointments.html', label: 'Lịch của tôi' },
-      { href: 'profile.html',         label: 'Hồ sơ' },
+      { href: 'profile.html', label: 'Hồ sơ' },
     ],
     DOCTOR: [
       { href: 'doctor-appointments.html', label: 'Lịch hẹn' },
-      { href: 'doctor-records.html',      label: 'Hồ sơ bệnh án' },
-      { href: 'doctor-schedule.html',     label: 'Lịch làm việc' },
-      { href: 'profile.html',             label: 'Hồ sơ' },
+      { href: 'doctor-records.html', label: 'Hồ sơ bệnh án' },
+      { href: 'doctor-schedule.html', label: 'Lịch làm việc' },
+      { href: 'profile.html', label: 'Hồ sơ' },
     ],
   };
 
@@ -46,9 +49,9 @@
 
   const roleBadge = document.getElementById('roleBadge');
   if (roleBadge) {
-    const LABELS = { ADMIN: 'ADMIN', PATIENT: 'PATIENT', DOCTOR: 'DOCTOR' };
-    const CLASSES = { ADMIN: 'badge-admin', PATIENT: 'badge-user', DOCTOR: 'badge-doctor' };
-    roleBadge.textContent = LABELS[role] || role || '';
-    roleBadge.className = `badge ${CLASSES[role] || ''}`;
+    const labels = { ADMIN: 'ADMIN', PATIENT: 'PATIENT', DOCTOR: 'DOCTOR' };
+    const classes = { ADMIN: 'badge-admin', PATIENT: 'badge-user', DOCTOR: 'badge-doctor' };
+    roleBadge.textContent = labels[role] || role || '';
+    roleBadge.className = `badge ${classes[role] || ''}`;
   }
 })();

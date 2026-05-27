@@ -54,7 +54,7 @@
 </div>
 
 <script>
-  const API = `http://${window.location.hostname}:8080`;
+  const API = window.location.origin;
 
   if (localStorage.getItem('token')) {
     window.location.href = 'dashboard.html';

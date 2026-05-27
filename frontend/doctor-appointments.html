@@ -21,9 +21,10 @@
     .status-COMPLETED { background: #eafaf1; color: #27ae60; }
     .status-CANCELED { background: #f0f0f0; color: #999; }
     .status-REJECTED { background: #fdecea; color: #e74c3c; }
-    .date-picker-bar { padding: 16px 28px; display: flex; align-items: center; gap: 12px; }
+    .date-picker-bar { padding: 16px 28px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
     .date-picker-bar input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: .9rem; outline: none; }
     .date-picker-bar input:focus { border-color: var(--primary); }
+    .toolbar-note { color: var(--text-light); font-size: .82rem; }
   </style>
 </head>
 <body>
@@ -48,7 +49,9 @@
     <div class="date-picker-bar">
       <label style="font-size:.9rem;font-weight:600;">Ngày:</label>
       <input type="date" id="pickDate" />
+      <button class="btn btn-primary btn-sm" onclick="showAll()">Tất cả</button>
       <button class="btn btn-outline btn-sm" onclick="goToday()">Hôm nay</button>
+      <span class="toolbar-note" id="toolbarNote"></span>
     </div>
 
     <div style="padding: 0 28px 28px;" id="listContainer">
@@ -88,9 +91,9 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  const API = `http://${window.location.hostname}:8080`;
+  const API = window.location.origin;
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const role = (localStorage.getItem('role') || '').trim().toUpperCase();
   const username = localStorage.getItem('username');
 
   if (!token || role !== 'DOCTOR') window.location.href = 'login.html';
@@ -108,9 +111,21 @@
     setTimeout(() => t.remove(), 3500);
   }
 
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('pickDate').value = today;
+  function localDateString(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  const today = localDateString();
+  document.getElementById('pickDate').value = '';
   document.getElementById('pickDate').addEventListener('change', () => loadAppointments());
+
+  function showAll() {
+    document.getElementById('pickDate').value = '';
+    loadAppointments();
+  }
 
   function goToday() {
     document.getElementById('pickDate').value = today;
@@ -168,13 +183,19 @@
   async function loadAppointments() {
     const date = document.getElementById('pickDate').value;
     const container = document.getElementById('listContainer');
+    const note = document.getElementById('toolbarNote');
     container.innerHTML = '<div style="text-align:center;padding:48px;color:#999;">Đang tải...</div>';
     try {
-      const res = await fetch(`${API}/api/doctor/appointments/today?date=${date}`, { headers: authHeaders() });
+      const url = date
+        ? `${API}/api/doctor/appointments/today?date=${date}`
+        : `${API}/api/doctor/appointments`;
+      const res = await fetch(url, { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }
-      const list = await res.json();
+      const data = await res.json();
+      const list = (Array.isArray(data) ? data : []).sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+      note.textContent = date ? `Đang lọc ngày ${date}` : 'Đang hiển thị tất cả lịch hẹn của bác sĩ';
       if (!list.length) {
-        container.innerHTML = `<div class="empty-state"><p>Không có lịch hẹn trong ngày này</p></div>`;
+        container.innerHTML = `<div class="empty-state"><p>${date ? 'Không có lịch hẹn trong ngày này' : 'Chưa có lịch hẹn nào'}</p></div>`;
         return;
       }
       container.innerHTML = `<div class="card">

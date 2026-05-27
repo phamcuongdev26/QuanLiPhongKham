@@ -1,0 +1,10 @@
+.git
+.idea
+.vscode
+backend/target
+**/target
+**/.DS_Store
+*.log
+node_modules
+mysql_data
+*.tmp

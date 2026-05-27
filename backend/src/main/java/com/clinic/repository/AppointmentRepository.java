@@ -15,6 +15,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(Long doctorId, LocalDateTime from, LocalDateTime to);
 
+    List<Appointment> findByDoctor_IdOrderByStartTimeDesc(Long doctorId);
+
     @Query("""
             SELECT COUNT(a) > 0 FROM Appointment a
             WHERE a.doctor.id = :doctorId

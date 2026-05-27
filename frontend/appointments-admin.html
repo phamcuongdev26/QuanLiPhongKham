@@ -107,7 +107,7 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  const API = `http://${window.location.hostname}:8080`;
+  const API = window.location.origin;
   const token = localStorage.getItem('token');
   const role  = localStorage.getItem('role');
   if (!token || role !== 'ADMIN') window.location.href = 'login.html';

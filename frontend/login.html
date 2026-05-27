@@ -37,10 +37,10 @@
 </div>
 
 <script>
-  const API = `http://${window.location.hostname}:8080`;
+  const API = window.location.origin;
 
   if (localStorage.getItem('token')) {
-    const role = localStorage.getItem('role');
+    const role = (localStorage.getItem('role') || '').trim().toUpperCase();
     if (role === 'ADMIN') window.location.href = 'dashboard.html';
     else if (role === 'DOCTOR') window.location.href = 'doctor-appointments.html';
     else window.location.href = 'specialties.html';
@@ -69,12 +69,13 @@
       if (!res.ok) throw new Error(data.message || 'Đăng nhập thất bại');
 
       localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('role', data.role);
+      const normalizedRole = (data.role || '').trim().toUpperCase();
+      localStorage.setItem('role', normalizedRole);
       localStorage.setItem('username', data.username);
       localStorage.setItem('userId', data.userId);
 
-      if (data.role === 'ADMIN') window.location.href = 'dashboard.html';
-      else if (data.role === 'DOCTOR') window.location.href = 'doctor-appointments.html';
+      if (normalizedRole === 'ADMIN') window.location.href = 'dashboard.html';
+      else if (normalizedRole === 'DOCTOR') window.location.href = 'doctor-appointments.html';
       else window.location.href = 'specialties.html';
     } catch (err) {
       alertEl.textContent = err.message;

@@ -30,6 +30,16 @@ public class DoctorAppointmentController {
         return ResponseEntity.ok(appointmentService.listDoctorToday(username(), date));
     }
 
+    @GetMapping
+    public ResponseEntity<List<AppointmentResponse>> listMine() {
+        return ResponseEntity.ok(appointmentService.listForDoctor(username()));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AppointmentResponse> getMine(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.getForDoctor(username(), id));
+    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<AppointmentResponse> updateStatus(@PathVariable Long id,
                                                            @Valid @RequestBody UpdateAppointmentStatusRequest request) {

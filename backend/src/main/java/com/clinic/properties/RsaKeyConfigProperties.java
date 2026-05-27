@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -23,8 +25,21 @@ public class RsaKeyConfigProperties {
             @Value("${app.jwt.public-key-path:classpath:keys/public.pem}") Resource publicKeyResource,
             @Value("${app.jwt.private-key-path:classpath:keys/private.pem}") Resource privateKeyResource
     ) throws Exception {
-        this.publicKey = parsePublicKey(new String(publicKeyResource.getInputStream().readAllBytes()));
-        this.privateKey = parsePrivateKey(new String(privateKeyResource.getInputStream().readAllBytes()));
+        if (publicKeyResource.exists() && privateKeyResource.exists()) {
+            this.publicKey = parsePublicKey(new String(publicKeyResource.getInputStream().readAllBytes()));
+            this.privateKey = parsePrivateKey(new String(privateKeyResource.getInputStream().readAllBytes()));
+            return;
+        }
+
+        KeyPair keyPair = generateDevelopmentKeyPair();
+        this.publicKey = (RSAPublicKey) keyPair.getPublic();
+        this.privateKey = (RSAPrivateKey) keyPair.getPrivate();
+    }
+
+    private KeyPair generateDevelopmentKeyPair() throws Exception {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(2048);
+        return generator.generateKeyPair();
     }
 
     private RSAPublicKey parsePublicKey(String pem) throws Exception {

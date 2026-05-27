@@ -57,9 +57,9 @@
 </div>
 
 <script>
-  const API = `http://${window.location.hostname}:8080`;
+  const API = window.location.origin;
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const role = (localStorage.getItem('role') || '').trim().toUpperCase();
   const username = localStorage.getItem('username');
 
   if (!token || role !== 'PATIENT') window.location.href = 'login.html';
