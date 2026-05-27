@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public interface AuditLogService {
 
     void log(String action, String entityType, Long entityId, String entityName,
-             String adminUsername, String ipAddress, Object oldValue, Object newValue, String detail);
+             String adminUsername, Object oldValue, Object newValue, String detail);
 
     PageResponse<AuditLogResponse> getPage(int page, int size,
                                            String entityType, String action,

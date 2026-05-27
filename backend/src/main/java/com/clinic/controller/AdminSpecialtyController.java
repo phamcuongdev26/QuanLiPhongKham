@@ -28,7 +28,7 @@ public class AdminSpecialtyController {
             Authentication auth) {
         SpecialtyResponse created = specialtyService.create(request);
         auditLogService.log("CREATE", "SPECIALTY", created.getId(), created.getName(),
-                auth.getName(), null, null, created,
+                auth.getName(), null, created,
                 "Tạo chuyên khoa: " + created.getName());
         return ResponseEntity.ok(created);
     }
@@ -41,7 +41,7 @@ public class AdminSpecialtyController {
         SpecialtyResponse old = specialtyService.getById(id);
         SpecialtyResponse updated = specialtyService.update(id, request);
         auditLogService.log("UPDATE", "SPECIALTY", id, updated.getName(),
-                auth.getName(), null, old, updated,
+                auth.getName(), old, updated,
                 "Cập nhật chuyên khoa: " + updated.getName());
         return ResponseEntity.ok(updated);
     }
@@ -53,7 +53,7 @@ public class AdminSpecialtyController {
         SpecialtyResponse old = specialtyService.getById(id);
         specialtyService.delete(id);
         auditLogService.log("DELETE", "SPECIALTY", id, old.getName(),
-                auth.getName(), null, old, null,
+                auth.getName(), old, null,
                 "Xóa chuyên khoa: " + old.getName());
         return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Xóa chuyên khoa thành công").build());
     }

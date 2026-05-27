@@ -17,7 +17,6 @@ public class AuditLogResponse {
     private String entityName;
     private String adminUsername;
     private String adminFullName;
-    private String ipAddress;
     private String oldValue;
     private String newValue;
     private String detail;

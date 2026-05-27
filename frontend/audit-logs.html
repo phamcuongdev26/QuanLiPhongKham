@@ -110,12 +110,11 @@
                 <th style="width:180px;">Giá trị mới</th>
                 <th style="width:80px;text-align:center;">So sánh</th>
                 <th style="width:90px;">Hành động</th>
-                <th style="width:140px;">Chức năng</th>
                 <th style="width:130px;">Ngày thực hiện</th>
               </tr>
             </thead>
             <tbody id="logsBody">
-              <tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">Đang tải...</td></tr>
+              <tr><td colspan="7" style="text-align:center;padding:40px;color:#999;">Đang tải...</td></tr>
             </tbody>
           </table>
         </div>
@@ -206,7 +205,6 @@
 
   function actionLabel(a) { return { CREATE:'INSERT', UPDATE:'UPDATE', DELETE:'DELETE' }[a] || a; }
   function entityLabel(e) { return { DOCTOR:'Bác sĩ', SPECIALTY:'Chuyên khoa', USER:'Khách hàng' }[e] || e; }
-  function moduleLabel(e) { return { DOCTOR:'Quản lý bác sĩ', SPECIALTY:'Quản lý chuyên khoa', USER:'Quản lý khách hàng' }[e] || e; }
 
   /* ── Table render ── */
   function renderTable(logs, page) {
@@ -239,7 +237,6 @@
             : '—'}
         </td>
         <td><span class="action-badge action-${l.action}">${actionLabel(l.action)}</span></td>
-        <td style="font-size:.78rem;color:#555;">${moduleLabel(l.entityType)}</td>
         <td style="font-size:.78rem;">${fmtDateTime(l.createdAt)}</td>
       </tr>`;
     }).join('');

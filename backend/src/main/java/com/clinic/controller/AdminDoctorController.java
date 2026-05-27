@@ -28,7 +28,7 @@ public class AdminDoctorController {
             Authentication auth) {
         DoctorSummaryResponse created = doctorService.createDoctor(request);
         auditLogService.log("CREATE", "DOCTOR", created.getId(), created.getFullName(),
-                auth.getName(), null, null, created,
+                auth.getName(), null, created,
                 "Tạo bác sĩ: " + created.getFullName());
         return ResponseEntity.ok(created);
     }
@@ -41,7 +41,7 @@ public class AdminDoctorController {
         DoctorSummaryResponse old = doctorService.getById(id);
         DoctorSummaryResponse updated = doctorService.updateDoctor(id, request);
         auditLogService.log("UPDATE", "DOCTOR", id, updated.getFullName(),
-                auth.getName(), null, old, updated,
+                auth.getName(), old, updated,
                 "Cập nhật bác sĩ: " + updated.getFullName());
         return ResponseEntity.ok(updated);
     }
@@ -53,7 +53,7 @@ public class AdminDoctorController {
         DoctorSummaryResponse old = doctorService.getById(id);
         doctorService.deleteDoctor(id);
         auditLogService.log("DELETE", "DOCTOR", id, old.getFullName(),
-                auth.getName(), null, old, null,
+                auth.getName(), old, null,
                 "Xóa bác sĩ: " + old.getFullName());
         return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Xóa bác sĩ thành công").build());
     }

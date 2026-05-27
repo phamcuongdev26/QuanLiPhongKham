@@ -29,7 +29,7 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     @Override
     public void log(String action, String entityType, Long entityId, String entityName,
-                    String adminUsername, String ipAddress, Object oldValue, Object newValue, String detail) {
+                    String adminUsername, Object oldValue, Object newValue, String detail) {
         try {
             String adminFullName = userRepository.findByUsername(adminUsername)
                     .map(User::getFullName).orElse(adminUsername);
@@ -41,7 +41,6 @@ public class AuditLogServiceImpl implements AuditLogService {
                     .entityName(entityName)
                     .adminUsername(adminUsername)
                     .adminFullName(adminFullName)
-                    .ipAddress(ipAddress)
                     .oldValue(oldValue != null ? objectMapper.writeValueAsString(oldValue) : null)
                     .newValue(newValue != null ? objectMapper.writeValueAsString(newValue) : null)
                     .detail(detail)
@@ -84,7 +83,6 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .entityName(log.getEntityName())
                 .adminUsername(log.getAdminUsername())
                 .adminFullName(log.getAdminFullName())
-                .ipAddress(log.getIpAddress())
                 .oldValue(log.getOldValue())
                 .newValue(log.getNewValue())
                 .detail(log.getDetail())
