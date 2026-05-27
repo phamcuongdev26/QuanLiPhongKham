@@ -4,6 +4,9 @@ import com.clinic.constant.AppointmentStatus;
 import com.clinic.dto.request.UpsertMedicalRecordRequest;
 import com.clinic.dto.request.UpsertPrescriptionItemRequest;
 import com.clinic.dto.request.UpsertPrescriptionRequest;
+import com.clinic.dto.response.MedicalRecordResponse;
+import com.clinic.dto.response.PrescriptionItemResponse;
+import com.clinic.dto.response.PrescriptionResponse;
 import com.clinic.entity.Appointment;
 import com.clinic.entity.MedicalRecord;
 import com.clinic.entity.Prescription;
@@ -48,11 +51,48 @@ public class MedicalServiceImpl implements MedicalService {
         return appointment;
     }
 
+    private MedicalRecordResponse toResponse(MedicalRecord rec) {
+        Appointment a = rec.getAppointment();
+        Prescription prx = prescriptionRepository.findByAppointment_Id(a.getId()).orElse(null);
+
+        PrescriptionResponse prxResponse = null;
+        if (prx != null) {
+            List<PrescriptionItemResponse> items = prx.getItems().stream()
+                    .map(i -> PrescriptionItemResponse.builder()
+                            .id(i.getId())
+                            .drugName(i.getDrugName())
+                            .dosage(i.getDosage())
+                            .frequency(i.getFrequency())
+                            .duration(i.getDuration())
+                            .instruction(i.getInstruction())
+                            .build())
+                    .toList();
+            prxResponse = PrescriptionResponse.builder()
+                    .note(prx.getNote())
+                    .createdAt(prx.getCreatedAt())
+                    .items(items)
+                    .build();
+        }
+
+        return MedicalRecordResponse.builder()
+                .appointmentId(a.getId())
+                .patientName(a.getPatient().getFullName())
+                .patientPhone(a.getPatient().getPhoneNumber())
+                .specialtyName(a.getSpecialty() == null ? null : a.getSpecialty().getName())
+                .startTime(a.getStartTime())
+                .status(a.getStatus())
+                .symptomDescription(a.getSymptomDescription())
+                .diagnosis(rec.getDiagnosis())
+                .clinicalNote(rec.getClinicalNote())
+                .prescription(prxResponse)
+                .build();
+    }
+
     @Override
     @Transactional
     public void upsertMedicalRecord(String doctorUsername, Long appointmentId, UpsertMedicalRecordRequest request) {
-        User doctor = doctor(doctorUsername);
-        Appointment appointment = doctorAppointment(doctor, appointmentId);
+        User doc = doctor(doctorUsername);
+        Appointment appointment = doctorAppointment(doc, appointmentId);
 
         MedicalRecord record = medicalRecordRepository.findById(appointment.getId()).orElse(null);
         if (record == null) {
@@ -71,8 +111,8 @@ public class MedicalServiceImpl implements MedicalService {
     @Override
     @Transactional
     public void upsertPrescription(String doctorUsername, Long appointmentId, UpsertPrescriptionRequest request) {
-        User doctor = doctor(doctorUsername);
-        Appointment appointment = doctorAppointment(doctor, appointmentId);
+        User doc = doctor(doctorUsername);
+        Appointment appointment = doctorAppointment(doc, appointmentId);
 
         Prescription prescription = prescriptionRepository.findById(appointment.getId()).orElse(null);
         if (prescription == null) {
@@ -98,5 +138,27 @@ public class MedicalServiceImpl implements MedicalService {
         }
         prescriptionRepository.save(prescription);
     }
-}
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<MedicalRecordResponse> getDoctorRecords(String doctorUsername) {
+        User doc = doctor(doctorUsername);
+        return medicalRecordRepository.findByAppointment_Doctor_Id(doc.getId()).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MedicalRecordResponse getRecord(String doctorUsername, Long appointmentId) {
+        User doc = doctor(doctorUsername);
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
+        if (!appointment.getDoctor().getId().equals(doc.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        MedicalRecord record = medicalRecordRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
+        return toResponse(record);
+    }
+}

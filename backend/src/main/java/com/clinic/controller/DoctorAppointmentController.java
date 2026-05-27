@@ -21,6 +21,9 @@ public class DoctorAppointmentController {
     private final AppointmentService appointmentService;
 
     private String username() {
+        // SecurityContextHolder nơi Spring Security lưu thông tin người dùng  đang đăng nhập
+        // getContext lấy context của request
+        // getAuthentication lấy object chưua thông tin user đang đăng nhập
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth == null ? null : auth.getName();
     }

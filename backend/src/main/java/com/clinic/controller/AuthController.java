@@ -1,9 +1,7 @@
 package com.clinic.controller;
 
-import com.clinic.dto.request.ForgotPasswordRequest;
 import com.clinic.dto.request.LoginRequest;
 import com.clinic.dto.request.RegisterRequest;
-import com.clinic.dto.request.ResetPasswordRequest;
 import com.clinic.dto.response.ApiResponse;
 import com.clinic.dto.response.AuthResponse;
 import com.clinic.service.AuthService;
@@ -39,23 +37,4 @@ public class AuthController {
                 .message("Đăng xuất thành công")
                 .build());
     }
-
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        authService.requestPasswordReset(request.getEmail());
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .code(200)
-                .message("Nếu email tồn tại, hệ thống đã gửi hướng dẫn đặt lại mật khẩu")
-                .build());
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        authService.resetPassword(request.getToken(), request.getNewPassword());
-        return ResponseEntity.ok(ApiResponse.<Void>builder()
-                .code(200)
-                .message("Đổi mật khẩu thành công")
-                .build());
-    }
 }
-

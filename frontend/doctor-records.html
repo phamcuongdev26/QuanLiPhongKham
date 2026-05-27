@@ -165,13 +165,12 @@
     const alertEl = document.getElementById('alertRecord');
     alertEl.className = 'alert';
     const body = {
-      appointmentId,
       diagnosis: document.getElementById('diagnosis').value.trim() || null,
       clinicalNote: document.getElementById('clinicalNote').value.trim() || null
     };
     try {
-      const res = await fetch(`${API}/api/medical-records`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body)
+      const res = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/record`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Thất bại');

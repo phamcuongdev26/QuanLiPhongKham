@@ -6,7 +6,6 @@ import com.clinic.dto.response.ApiResponse;
 import com.clinic.dto.response.SpecialtyResponse;
 import com.clinic.service.AuditLogService;
 import com.clinic.service.SpecialtyService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -23,18 +22,13 @@ public class AdminSpecialtyController {
     private final SpecialtyService specialtyService;
     private final AuditLogService auditLogService;
 
-    @GetMapping
-    public ResponseEntity<List<SpecialtyResponse>> listAll() {
-        return ResponseEntity.ok(specialtyService.listAll());
-    }
-
     @PostMapping
     public ResponseEntity<SpecialtyResponse> create(
             @Valid @RequestBody CreateSpecialtyRequest request,
-            Authentication auth, HttpServletRequest httpRequest) {
+            Authentication auth) {
         SpecialtyResponse created = specialtyService.create(request);
         auditLogService.log("CREATE", "SPECIALTY", created.getId(), created.getName(),
-                auth.getName(), getClientIp(httpRequest), null, created,
+                auth.getName(), null, null, created,
                 "Tạo chuyên khoa: " + created.getName());
         return ResponseEntity.ok(created);
     }
@@ -43,11 +37,11 @@ public class AdminSpecialtyController {
     public ResponseEntity<SpecialtyResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateSpecialtyRequest request,
-            Authentication auth, HttpServletRequest httpRequest) {
+            Authentication auth) {
         SpecialtyResponse old = specialtyService.getById(id);
         SpecialtyResponse updated = specialtyService.update(id, request);
         auditLogService.log("UPDATE", "SPECIALTY", id, updated.getName(),
-                auth.getName(), getClientIp(httpRequest), old, updated,
+                auth.getName(), null, old, updated,
                 "Cập nhật chuyên khoa: " + updated.getName());
         return ResponseEntity.ok(updated);
     }
@@ -55,18 +49,12 @@ public class AdminSpecialtyController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
-            Authentication auth, HttpServletRequest httpRequest) {
+            Authentication auth) {
         SpecialtyResponse old = specialtyService.getById(id);
         specialtyService.delete(id);
         auditLogService.log("DELETE", "SPECIALTY", id, old.getName(),
-                auth.getName(), getClientIp(httpRequest), old, null,
+                auth.getName(), null, old, null,
                 "Xóa chuyên khoa: " + old.getName());
         return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Xóa chuyên khoa thành công").build());
-    }
-
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
-        return ip;
     }
 }
