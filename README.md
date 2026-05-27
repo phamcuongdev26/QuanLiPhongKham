@@ -10,7 +10,9 @@
 shoppe_mvp/
 ├── backend/          Spring Boot (package: com.clinic)
 ├── frontend/         HTML pages
-├── schema.sql        DB schema + seed data
+├── database/dump.sql DB schema + seed data
+├── docker-compose.yml
+├── Dockerfile
 └── README.md
 ```
 
@@ -44,41 +46,49 @@ jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=UTC&allowPubli
 | `prescription_items` | Chi tiết từng thuốc trong đơn |
 | `password_reset_tokens` | Token đặt lại mật khẩu |
 | `notifications` | Thông báo |
+| `audit_logs` | Nhật ký thao tác admin |
 
 ### Khởi tạo DB
 ```bash
-# Chạy schema.sql — tạo DB, bảng và seed data trong một lần
-mysql -u root -p < schema.sql
+# Import dump — tạo bảng và dữ liệu mẫu
+mysql -u root -p < database/dump.sql
 ```
 
 ---
 
 ## Cài đặt
 
-### 1. Tạo database
+### 1. Chạy bằng Docker
 ```bash
-mysql -u root -p < schema.sql
+docker compose up -d --build
 ```
 
-### 2. Tạo RSA Key pair
+Nếu đã từng chạy DB cũ và muốn import lại dump từ đầu:
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+### 2. Chạy thủ công
+```bash
+mysql -u root -p < database/dump.sql
+cd backend
+mvn spring-boot:run
+```
+
+### 3. Tạo RSA Key pair nếu thay key JWT
 ```bash
 openssl genpkey -algorithm RSA -out private_key.pem -pkcs8
 openssl rsa -pubout -in private_key.pem -out public_key.pem
 ```
 
-### 3. Set environment variables
+### 4. Set environment variables
 ```bash
 export DB_URL=jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
 export DB_USERNAME=root
 export DB_PASSWORD=12345678
 export RSA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 export RSA_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
-```
-
-### 4. Chạy backend
-```bash
-cd backend
-mvn spring-boot:run
 ```
 
 ### 5. Truy cập
