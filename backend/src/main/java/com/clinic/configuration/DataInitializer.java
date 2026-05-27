@@ -30,7 +30,7 @@ public class DataInitializer implements ApplicationRunner {
     private final DoctorWorkShiftRepository doctorWorkShiftRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private static final String DEFAULT_PASSWORD = "Admin@123";
+    private static final String DEFAULT_PASSWORD = "123456";
 
     @Override
     @Transactional
