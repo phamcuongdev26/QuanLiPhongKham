@@ -6,26 +6,47 @@
   <title>Lịch sử thay đổi - Phòng Khám</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    .action-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:700; }
+    .action-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:700; white-space:nowrap; }
     .action-CREATE { background:#eafaf1; color:#27ae60; }
     .action-UPDATE { background:#e8f4fd; color:#2980b9; }
     .action-DELETE { background:#fdecea; color:#e74c3c; }
-    .entity-USER { background:#f3e5f5; color:#8e24aa; }
-    .entity-CATEGORY { background:#fff3e0; color:#e67e22; }
-    .entity-SELLER { background:#e3f2fd; color:#1565c0; }
-    .filter-bar { display:flex; flex-wrap:wrap; gap:10px; padding:16px 20px; border-bottom:1px solid var(--border); align-items:flex-end; }
+
+    .entity-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.72rem; font-weight:700; }
+    .entity-DOCTOR    { background:#e3f2fd; color:#1565c0; }
+    .entity-SPECIALTY { background:#fff3e0; color:#e67e22; }
+    .entity-USER      { background:#f3e5f5; color:#8e24aa; }
+
+    .filter-bar { display:flex; flex-wrap:wrap; gap:10px; padding:14px 20px; border-bottom:1px solid var(--border); align-items:flex-end; }
     .filter-bar .form-group { display:flex; flex-direction:column; gap:4px; }
-    .filter-bar label { font-size:.78rem; color:var(--text-light); font-weight:600; }
-    .filter-bar input[type=date], .filter-bar select { padding:7px 12px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:.88rem; background:#fff; }
-    .filter-bar input[type=date]:focus, .filter-bar select:focus { border-color:var(--primary); outline:none; }
-    .diff-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .diff-old { background:#fdecea; border-radius:6px; padding:10px; }
-    .diff-new { background:#eafaf1; border-radius:6px; padding:10px; }
-    .diff-label { font-size:.75rem; font-weight:700; margin-bottom:6px; }
-    .diff-old .diff-label { color:#e74c3c; }
-    .diff-new .diff-label { color:#27ae60; }
-    .json-pre { font-size:.75rem; white-space:pre-wrap; word-break:break-all; max-height:200px; overflow-y:auto; background:#f8f9fa; padding:10px; border-radius:6px; }
-    .ip-text { font-size:.75rem; color:#aaa; font-family:monospace; }
+    .filter-bar label { font-size:.76rem; color:var(--text-light); font-weight:600; }
+    .filter-bar input[type=date], .filter-bar select { padding:6px 10px; border:1.5px solid #e0e0e0; border-radius:8px; font-size:.85rem; background:#fff; }
+
+    .audit-wrap { overflow-x:auto; }
+    .audit-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .audit-table th { background:#f8f9fa; font-weight:700; padding:10px 12px; text-align:left; border-bottom:2px solid #e0e0e0; white-space:nowrap; }
+    .audit-table td { padding:9px 12px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+    .audit-table tr:hover td { background:#fafbfc; }
+
+    .val-text { font-size:.8rem; color:#444; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+    .null-text { font-size:.78rem; color:#bbb; font-style:italic; }
+
+    /* ── So sánh modal ── */
+    .cmp-modal { max-width:820px; width:95vw; }
+    .cmp-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .cmp-panel { border-radius:8px; overflow:hidden; border:1px solid #e0e0e0; }
+    .cmp-panel-head { padding:8px 14px; font-weight:700; font-size:.82rem; }
+    .cmp-panel-head.old-head { background:#fdecea; color:#c0392b; }
+    .cmp-panel-head.new-head { background:#eafaf1; color:#1e8449; }
+    .cmp-panel-head.null-head { background:#f5f5f5; color:#999; }
+    .cmp-rows { padding:8px 0; }
+    .cmp-row { display:flex; gap:8px; padding:5px 14px; font-size:.8rem; }
+    .cmp-row:nth-child(odd) { background:#fafafa; }
+    .cmp-key { color:#888; min-width:110px; flex-shrink:0; }
+    .cmp-val { color:#333; word-break:break-word; }
+    .cmp-row.changed .cmp-val { font-weight:700; }
+    .cmp-row.changed-old .cmp-val { background:#fdecea; color:#c0392b; padding:1px 6px; border-radius:4px; }
+    .cmp-row.changed-new .cmp-val { background:#eafaf1; color:#1e8449; padding:1px 6px; border-radius:4px; }
+    .cmp-null-msg { padding:24px; text-align:center; color:#bbb; font-style:italic; font-size:.85rem; }
   </style>
 </head>
 <body>
@@ -47,7 +68,6 @@
 
     <div class="page-body">
       <div class="card">
-        <!-- Bộ lọc -->
         <div class="filter-bar">
           <div class="form-group">
             <label>Từ ngày</label>
@@ -61,44 +81,45 @@
             <label>Đối tượng</label>
             <select id="filterEntity">
               <option value="">Tất cả</option>
-              <option value="USER">Tài khoản</option>
-              <option value="SELLER">Bán hàng</option>
-              <option value="CATEGORY">Danh mục</option>
+              <option value="DOCTOR">Bác sĩ</option>
+              <option value="SPECIALTY">Chuyên khoa</option>
             </select>
           </div>
           <div class="form-group">
             <label>Hành động</label>
             <select id="filterAction">
               <option value="">Tất cả</option>
-              <option value="CREATE">Tạo mới</option>
-              <option value="UPDATE">Cập nhật</option>
-              <option value="DELETE">Xóa</option>
+              <option value="CREATE">INSERT</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="DELETE">DELETE</option>
             </select>
           </div>
-          <div class="form-group" style="justify-content:flex-end;flex-direction:row;gap:8px;">
+          <div class="form-group" style="flex-direction:row;gap:8px;align-items:flex-end;">
             <button class="btn btn-primary btn-sm" onclick="resetAndLoad()">&#128269; Tìm kiếm</button>
             <button class="btn btn-outline btn-sm" onclick="resetFilters()">&#8635; Làm mới</button>
           </div>
         </div>
 
-        <div class="table-wrap">
-          <table>
+        <div class="audit-wrap">
+          <table class="audit-table">
             <thead>
               <tr>
-                <th style="width:48px;">#</th>
-                <th>Hành động</th>
-                <th>Đối tượng</th>
-                <th>Người thực hiện</th>
-                <th>Chi tiết</th>
-                <th>Ngày thực hiện</th>
-                <th style="width:80px;">So sánh</th>
+                <th style="width:44px;">#</th>
+                <th style="width:120px;">Đối tượng</th>
+                <th style="width:180px;">Giá trị cũ</th>
+                <th style="width:180px;">Giá trị mới</th>
+                <th style="width:80px;text-align:center;">So sánh</th>
+                <th style="width:90px;">Hành động</th>
+                <th style="width:140px;">Chức năng</th>
+                <th style="width:130px;">Ngày thực hiện</th>
               </tr>
             </thead>
             <tbody id="logsBody">
-              <tr><td colspan="7" style="text-align:center;padding:32px;color:#999;">Đang tải...</td></tr>
+              <tr><td colspan="8" style="text-align:center;padding:40px;color:#999;">Đang tải...</td></tr>
             </tbody>
           </table>
         </div>
+
         <div id="emptyMsg" class="empty-state" style="display:none;">
           <div class="empty-icon">&#128203;</div>
           <p>Chưa có lịch sử thay đổi</p>
@@ -112,16 +133,15 @@
   </div>
 </div>
 
-<!-- DIFF MODAL -->
-<div class="modal-overlay" id="diffModal">
-  <div class="modal" style="max-width:700px;">
+<!-- SO SÁNH MODAL -->
+<div class="modal-overlay" id="cmpModal">
+  <div class="modal cmp-modal">
     <div class="modal-header">
-      <h3>So sánh thay đổi</h3>
-      <button class="modal-close" onclick="closeDiff()">&#x2715;</button>
+      <h3 id="cmpTitle">So sánh thay đổi</h3>
+      <button class="modal-close" onclick="closeCmp()">&#x2715;</button>
     </div>
     <div class="modal-body">
-      <p id="diffDetail" style="margin-bottom:12px;color:#666;font-size:.85rem;"></p>
-      <div class="diff-row" id="diffContent"></div>
+      <div class="cmp-grid" id="cmpGrid"></div>
     </div>
   </div>
 </div>
@@ -129,9 +149,9 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  const API = 'http://localhost:8080';
+  const API   = 'http://localhost:8080';
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const role  = localStorage.getItem('role');
   if (!token || role !== 'ADMIN') window.location.href = 'login.html';
 
   let currentPage = 0;
@@ -139,20 +159,181 @@
   let _logs = [];
   let _gotoPage = null;
 
-  // Mặc định: từ đầu tháng đến hôm nay
-  const today = new Date();
+  const today        = new Date();
   const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   document.getElementById('filterFrom').value = toDateInput(firstOfMonth);
-  document.getElementById('filterTo').value = toDateInput(today);
+  document.getElementById('filterTo').value   = toDateInput(today);
 
-  function toDateInput(d) {
-    return d.toISOString().slice(0, 10);
-  }
-
-  function authHeaders() {
-    return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-  }
+  function toDateInput(d) { return d.toISOString().slice(0,10); }
+  function authHeaders() { return { 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' }; }
   function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+  function fmtDateTime(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  /* ── Field helpers ── */
+  const FIELD_LABELS = {
+    fullName:'Họ tên', email:'Email', phoneNumber:'SĐT',
+    title:'Chức danh', specialtyName:'Chuyên khoa',
+    consultationFee:'Phí khám', bio:'Giới thiệu',
+    isActive:'Trạng thái', name:'Tên', description:'Mô tả',
+    username:'Username', role:'Vai trò',
+  };
+  const SKIP = new Set(['id','specialtyId']);
+
+  function fmtVal(key, val) {
+    if (val === null || val === undefined) return '—';
+    if (key === 'isActive') return val ? 'Hoạt động' : 'Không hoạt động';
+    if (key === 'consultationFee' && val) return new Intl.NumberFormat('vi-VN').format(val) + ' đ';
+    return String(val);
+  }
+
+  /* one-line summary from JSON */
+  function summaryText(jsonStr) {
+    if (!jsonStr) return null;
+    try {
+      const o = JSON.parse(jsonStr);
+      const primary = o.fullName || o.name || o.username || o.email || '';
+      const parts = [primary];
+      if (o.specialtyName) parts.push(o.specialtyName);
+      if (o.consultationFee) parts.push(new Intl.NumberFormat('vi-VN').format(o.consultationFee) + ' đ');
+      if (o.isActive !== undefined) parts.push(o.isActive ? 'Hoạt động' : 'Không hoạt động');
+      return parts.filter(Boolean).join(' • ');
+    } catch { return jsonStr; }
+  }
+
+  function actionLabel(a) { return { CREATE:'INSERT', UPDATE:'UPDATE', DELETE:'DELETE' }[a] || a; }
+  function entityLabel(e) { return { DOCTOR:'Bác sĩ', SPECIALTY:'Chuyên khoa', USER:'Khách hàng' }[e] || e; }
+  function moduleLabel(e) { return { DOCTOR:'Quản lý bác sĩ', SPECIALTY:'Quản lý chuyên khoa', USER:'Quản lý khách hàng' }[e] || e; }
+
+  /* ── Table render ── */
+  function renderTable(logs, page) {
+    const tbody = document.getElementById('logsBody');
+    const empty = document.getElementById('emptyMsg');
+    if (!logs.length) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    const offset = (page.page || 0) * PAGE_SIZE;
+
+    tbody.innerHTML = logs.map((l, i) => {
+      const oldText = l.action === 'CREATE'
+        ? '<span class="null-text">null</span>'
+        : `<div class="val-text" title="${summaryText(l.oldValue) || ''}">${summaryText(l.oldValue) || '—'}</div>`;
+
+      const newText = l.action === 'DELETE'
+        ? '<span class="null-text">null</span>'
+        : `<div class="val-text" title="${summaryText(l.newValue) || ''}">${summaryText(l.newValue) || '—'}</div>`;
+
+      return `<tr>
+        <td style="text-align:center;">${offset + i + 1}</td>
+        <td>
+          <span class="entity-badge entity-${l.entityType}">${entityLabel(l.entityType)}</span>
+          <div style="font-size:.73rem;color:#666;margin-top:2px;">${l.entityName || ''}</div>
+        </td>
+        <td>${oldText}</td>
+        <td>${newText}</td>
+        <td style="text-align:center;">
+          ${l.action === 'UPDATE'
+            ? `<button class="btn btn-info btn-sm" onclick="openCmp(${l.id})" title="Xem so sánh">&#128065;</button>`
+            : '—'}
+        </td>
+        <td><span class="action-badge action-${l.action}">${actionLabel(l.action)}</span></td>
+        <td style="font-size:.78rem;color:#555;">${moduleLabel(l.entityType)}</td>
+        <td style="font-size:.78rem;">${fmtDateTime(l.createdAt)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  /* ── Comparison modal ── */
+  function openCmp(id) {
+    const l = _logs.find(x => x.id === id);
+    if (!l) return;
+
+    document.getElementById('cmpTitle').textContent =
+      `So sánh • ${entityLabel(l.entityType)} • ${l.entityName || ''} • ${actionLabel(l.action)}`;
+
+    let oldObj = null, newObj = null;
+    try { oldObj = l.oldValue ? JSON.parse(l.oldValue) : null; } catch {}
+    try { newObj = l.newValue ? JSON.parse(l.newValue) : null; } catch {}
+
+    const allKeys = [...new Set([
+      ...(oldObj ? Object.keys(oldObj) : []),
+      ...(newObj ? Object.keys(newObj) : []),
+    ])].filter(k => !SKIP.has(k));
+
+    /* find changed keys */
+    const changedKeys = new Set(
+      allKeys.filter(k => JSON.stringify(oldObj?.[k]) !== JSON.stringify(newObj?.[k]))
+    );
+
+    function buildPanel(obj, side) {
+      if (!obj) return `<div class="cmp-null-msg">null</div>`;
+      return `<div class="cmp-rows">${
+        allKeys.map(k => {
+          const label   = FIELD_LABELS[k] || k;
+          const val     = fmtVal(k, obj[k]);
+          const changed = changedKeys.has(k);
+          const cls     = changed ? (side === 'old' ? 'cmp-row changed-old' : 'cmp-row changed-new') : 'cmp-row';
+          return `<div class="${cls}">
+            <span class="cmp-key">${label}</span>
+            <span class="cmp-val">${val}</span>
+          </div>`;
+        }).join('')
+      }</div>`;
+    }
+
+    const oldHeadCls = oldObj ? 'old-head' : 'null-head';
+    const newHeadCls = newObj ? 'new-head' : 'null-head';
+
+    document.getElementById('cmpGrid').innerHTML = `
+      <div class="cmp-panel">
+        <div class="cmp-panel-head ${oldHeadCls}">&#10060; Giá trị cũ</div>
+        ${buildPanel(oldObj, 'old')}
+      </div>
+      <div class="cmp-panel">
+        <div class="cmp-panel-head ${newHeadCls}">&#9989; Giá trị mới</div>
+        ${buildPanel(newObj, 'new')}
+      </div>`;
+
+    document.getElementById('cmpModal').classList.add('open');
+  }
+
+  function closeCmp() { document.getElementById('cmpModal').classList.remove('open'); }
+  document.getElementById('cmpModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCmp(); });
+
+  /* ── Load & pagination ── */
+  function resetAndLoad() { currentPage = 0; loadLogs(); }
+
+  function resetFilters() {
+    document.getElementById('filterFrom').value   = toDateInput(firstOfMonth);
+    document.getElementById('filterTo').value     = toDateInput(today);
+    document.getElementById('filterEntity').value = '';
+    document.getElementById('filterAction').value = '';
+    resetAndLoad();
+  }
+
+  async function loadLogs() {
+    const params = new URLSearchParams({ page: currentPage, size: PAGE_SIZE });
+    const entity = document.getElementById('filterEntity').value;
+    const action = document.getElementById('filterAction').value;
+    const from   = document.getElementById('filterFrom').value;
+    const to     = document.getElementById('filterTo').value;
+    if (entity) params.append('entityType', entity);
+    if (action) params.append('action', action);
+    if (from)   params.append('from', from);
+    if (to)     params.append('to', to);
+
+    try {
+      const res  = await fetch(`${API}/api/admin/audit-logs?${params}`, { headers: authHeaders() });
+      if (res.status === 401 || res.status === 403) { logout(); return; }
+      const data = await res.json();
+      const page = data.result || {};
+      _logs = page.content || [];
+      renderTable(_logs, page);
+      renderPagination(page.page || 0, page.totalPages || 0, page.totalElements || 0, PAGE_SIZE, p => { currentPage = p; loadLogs(); });
+    } catch { toast('Lỗi tải lịch sử', 'error'); }
+  }
 
   function toast(msg, type = 'success') {
     const c = document.getElementById('toastContainer');
@@ -162,107 +343,14 @@
     c.appendChild(t); setTimeout(() => t.remove(), 3500);
   }
 
-  function fmtDateTime(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleString('vi-VN', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  }
-
-  function resetAndLoad() { currentPage = 0; loadLogs(); }
-
-  function resetFilters() {
-    document.getElementById('filterFrom').value = toDateInput(firstOfMonth);
-    document.getElementById('filterTo').value = toDateInput(today);
-    document.getElementById('filterEntity').value = '';
-    document.getElementById('filterAction').value = '';
-    resetAndLoad();
-  }
-
-  async function loadLogs() {
-    const entityType = document.getElementById('filterEntity').value;
-    const action = document.getElementById('filterAction').value;
-    const from = document.getElementById('filterFrom').value;
-    const to = document.getElementById('filterTo').value;
-    const params = new URLSearchParams({ page: currentPage, size: PAGE_SIZE });
-    if (entityType) params.append('entityType', entityType);
-    if (action) params.append('action', action);
-    if (from) params.append('from', from);
-    if (to) params.append('to', to);
-
-    try {
-      const res = await fetch(`${API}/api/admin/audit-logs?${params}`, { headers: authHeaders() });
-      if (res.status === 401 || res.status === 403) { logout(); return; }
-      const data = await res.json();
-      const page = data.result || {};
-      _logs = page.content || [];
-      renderTable(_logs, page);
-      renderPagination(page.page || 0, page.totalPages || 0, page.totalElements || 0, PAGE_SIZE, goToPage);
-    } catch { toast('Lỗi tải lịch sử', 'error'); }
-  }
-
-  function goToPage(p) { currentPage = p; loadLogs(); }
-
-  function renderTable(logs, page) {
-    const tbody = document.getElementById('logsBody');
-    const empty = document.getElementById('emptyMsg');
-    if (logs.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
-    const offset = (page.page || 0) * PAGE_SIZE;
-    tbody.innerHTML = logs.map((l, i) => `
-      <tr>
-        <td>${offset + i + 1}</td>
-        <td><span class="action-badge action-${l.action}">${actionLabel(l.action)}</span></td>
-        <td>
-          <span class="action-badge entity-${l.entityType}">${entityLabel(l.entityType)}</span>
-          ${l.entityName ? `<br><small style="color:#555;font-size:.78rem;">${l.entityName}</small>` : ''}
-        </td>
-        <td>
-          <strong>${l.adminUsername}</strong>
-          ${l.adminFullName && l.adminFullName !== l.adminUsername ? `<br><small style="color:#777;font-size:.78rem;">${l.adminFullName}</small>` : ''}
-          ${l.ipAddress ? `<br><span class="ip-text">${l.ipAddress}</span>` : ''}
-        </td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;">${l.detail || '—'}</td>
-        <td style="white-space:nowrap;font-size:.82rem;">${fmtDateTime(l.createdAt)}</td>
-        <td>${(l.oldValue || l.newValue) ? `<button class="btn btn-info btn-sm" onclick="showDiff(${l.id})">&#128065;</button>` : '—'}</td>
-      </tr>
-    `).join('');
-  }
-
-  function actionLabel(a) {
-    return { CREATE:'Tạo mới', UPDATE:'Cập nhật', DELETE:'Xóa' }[a] || a;
-  }
-  function entityLabel(e) {
-    return { USER:'Tài khoản', SELLER:'Bán hàng', CATEGORY:'Danh mục' }[e] || e;
-  }
-
-  function showDiff(id) {
-    const log = _logs.find(l => l.id === id);
-    if (!log) return;
-    document.getElementById('diffDetail').textContent =
-      `${actionLabel(log.action)} • ${entityLabel(log.entityType)} • ${log.entityName || ''} • ${fmtDateTime(log.createdAt)}`;
-    let html = '';
-    if (log.oldValue) html += `<div class="diff-old"><div class="diff-label">&#10060; Giá trị cũ</div><pre class="json-pre">${formatJson(log.oldValue)}</pre></div>`;
-    if (log.newValue) html += `<div class="diff-new"><div class="diff-label">&#9989; Giá trị mới</div><pre class="json-pre">${formatJson(log.newValue)}</pre></div>`;
-    if (!html) html = '<p>Không có dữ liệu so sánh</p>';
-    document.getElementById('diffContent').innerHTML = html;
-    document.getElementById('diffModal').classList.add('open');
-  }
-
-  function formatJson(str) {
-    try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
-  }
-
-  function closeDiff() { document.getElementById('diffModal').classList.remove('open'); }
-  document.getElementById('diffModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDiff(); });
-
   function renderPagination(page, totalPages, totalElements, size, onPageChange) {
     _gotoPage = onPageChange;
-    const el = document.getElementById('pagination');
+    const el     = document.getElementById('pagination');
     const infoEl = document.getElementById('paginationInfo');
-    if (!el) return;
-    const start = totalElements === 0 ? 0 : page * size + 1;
-    const end = Math.min((page + 1) * size, totalElements);
+    const start  = totalElements === 0 ? 0 : page * size + 1;
+    const end    = Math.min((page + 1) * size, totalElements);
     if (infoEl) infoEl.textContent = totalElements > 0 ? `Hiển thị ${start}–${end} / ${totalElements} bản ghi` : '';
-    if (totalPages <= 1) { el.innerHTML = ''; return; }
+    if (!el || totalPages <= 1) { if (el) el.innerHTML = ''; return; }
     let html = `<button class="page-btn" onclick="_gotoPage(0)" ${page===0?'disabled':''}>«</button>`;
     html += `<button class="page-btn" onclick="_gotoPage(${page-1})" ${page===0?'disabled':''}>‹</button>`;
     getPageRange(page, totalPages).forEach(p => {

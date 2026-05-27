@@ -39,6 +39,7 @@ public class DoctorServiceImpl implements DoctorService {
                 .consultationFee(profile.getConsultationFee())
                 .title(profile.getTitle())
                 .bio(profile.getBio())
+                .isActive(doctor.isActive())
                 .build();
     }
 
@@ -127,8 +128,8 @@ public class DoctorServiceImpl implements DoctorService {
         if (user.getRole() != Role.DOCTOR) {
             throw new AppException(ErrorCode.DOCTOR_NOT_FOUND);
         }
-        doctorProfileRepository.deleteById(doctorUserId);
-        userRepository.delete(user);
+        user.setActive(false);
+        userRepository.save(user);
     }
 }
 

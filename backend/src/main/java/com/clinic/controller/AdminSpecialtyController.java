@@ -1,12 +1,16 @@
 package com.clinic.controller;
 
 import com.clinic.dto.request.CreateSpecialtyRequest;
+import com.clinic.dto.request.UpdateSpecialtyRequest;
 import com.clinic.dto.response.ApiResponse;
 import com.clinic.dto.response.SpecialtyResponse;
+import com.clinic.service.AuditLogService;
 import com.clinic.service.SpecialtyService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +21,7 @@ import java.util.List;
 public class AdminSpecialtyController {
 
     private final SpecialtyService specialtyService;
+    private final AuditLogService auditLogService;
 
     @GetMapping
     public ResponseEntity<List<SpecialtyResponse>> listAll() {
@@ -24,14 +29,44 @@ public class AdminSpecialtyController {
     }
 
     @PostMapping
-    public ResponseEntity<SpecialtyResponse> create(@Valid @RequestBody CreateSpecialtyRequest request) {
-        return ResponseEntity.ok(specialtyService.create(request));
+    public ResponseEntity<SpecialtyResponse> create(
+            @Valid @RequestBody CreateSpecialtyRequest request,
+            Authentication auth, HttpServletRequest httpRequest) {
+        SpecialtyResponse created = specialtyService.create(request);
+        auditLogService.log("CREATE", "SPECIALTY", created.getId(), created.getName(),
+                auth.getName(), getClientIp(httpRequest), null, created,
+                "Tạo chuyên khoa: " + created.getName());
+        return ResponseEntity.ok(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SpecialtyResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateSpecialtyRequest request,
+            Authentication auth, HttpServletRequest httpRequest) {
+        SpecialtyResponse old = specialtyService.getById(id);
+        SpecialtyResponse updated = specialtyService.update(id, request);
+        auditLogService.log("UPDATE", "SPECIALTY", id, updated.getName(),
+                auth.getName(), getClientIp(httpRequest), old, updated,
+                "Cập nhật chuyên khoa: " + updated.getName());
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            Authentication auth, HttpServletRequest httpRequest) {
+        SpecialtyResponse old = specialtyService.getById(id);
         specialtyService.delete(id);
+        auditLogService.log("DELETE", "SPECIALTY", id, old.getName(),
+                auth.getName(), getClientIp(httpRequest), old, null,
+                "Xóa chuyên khoa: " + old.getName());
         return ResponseEntity.ok(ApiResponse.<Void>builder().code(200).message("Xóa chuyên khoa thành công").build());
     }
-}
 
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
+        return ip;
+    }
+}

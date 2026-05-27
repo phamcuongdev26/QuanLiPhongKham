@@ -2,8 +2,11 @@ package com.clinic.properties;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -19,11 +22,15 @@ public class RsaKeyConfigProperties {
     private final RSAPrivateKey privateKey;
 
     public RsaKeyConfigProperties(
-            @Value("${RSA_PUBLIC_KEY}") String publicKeyPem,
-            @Value("${RSA_PRIVATE_KEY}") String privateKeyPem
+            @Value("${app.jwt.public-key}") Resource publicKeyResource,
+            @Value("${app.jwt.private-key}") Resource privateKeyResource
     ) throws Exception {
-        this.publicKey = parsePublicKey(publicKeyPem);
-        this.privateKey = parsePrivateKey(privateKeyPem);
+        this.publicKey = parsePublicKey(readResource(publicKeyResource));
+        this.privateKey = parsePrivateKey(readResource(privateKeyResource));
+    }
+
+    private String readResource(Resource resource) throws IOException {
+        return resource.getContentAsString(StandardCharsets.UTF_8);
     }
 
     private RSAPublicKey parsePublicKey(String pem) throws Exception {

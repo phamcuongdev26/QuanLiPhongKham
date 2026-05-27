@@ -22,7 +22,8 @@ public class ApplicationConfig {
                                         SpecialtyRepository specialtyRepository,
                                         PasswordEncoder passwordEncoder) {
         return args -> {
-            if (userRepository.findByEmail("admin@clinic.local").isEmpty()) {
+            if (userRepository.findByEmail("admin@clinic.local").isEmpty()
+                    && userRepository.findByUsername("admin").isEmpty()) {
                 User admin = User.builder()
                         .username("admin")
                         .fullName("System Admin")

@@ -1,5 +1,6 @@
 package com.clinic.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Getter
@@ -16,5 +17,7 @@ public class DoctorSummaryResponse {
     private Long consultationFee;
     private String title;
     private String bio;
+    @JsonProperty("isActive")
+    private boolean isActive;
 }
 

@@ -103,7 +103,8 @@
         ? `${API}/api/doctors?specialtyId=${specialtyId}`
         : `${API}/api/doctors`;
       const res = await fetch(url);
-      const list = await res.json();
+      const raw = await res.json();
+      const list = (Array.isArray(raw) ? raw : raw.result || []).filter(d => d.isActive !== false);
       const grid = document.getElementById('doctorGrid');
       if (!list || list.length === 0) {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">Không có bác sĩ trong chuyên khoa này</div>';

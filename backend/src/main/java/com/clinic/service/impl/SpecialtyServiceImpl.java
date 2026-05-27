@@ -1,6 +1,7 @@
 package com.clinic.service.impl;
 
 import com.clinic.dto.request.CreateSpecialtyRequest;
+import com.clinic.dto.request.UpdateSpecialtyRequest;
 import com.clinic.dto.response.SpecialtyResponse;
 import com.clinic.entity.Specialty;
 import com.clinic.exception.AppException;
@@ -41,6 +42,13 @@ public class SpecialtyServiceImpl implements SpecialtyService {
     }
 
     @Override
+    public SpecialtyResponse getById(Long id) {
+        return specialtyRepository.findById(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
+    }
+
+    @Override
     public SpecialtyResponse create(CreateSpecialtyRequest request) {
         if (specialtyRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
             throw new AppException(ErrorCode.SPECIALTY_ALREADY_EXISTS);
@@ -54,10 +62,21 @@ public class SpecialtyServiceImpl implements SpecialtyService {
     }
 
     @Override
+    public SpecialtyResponse update(Long id, UpdateSpecialtyRequest request) {
+        Specialty specialty = specialtyRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
+        specialty.setName(request.getName());
+        specialty.setDescription(request.getDescription());
+        if (request.getIsActive() != null) specialty.setActive(request.getIsActive());
+        return toResponse(specialtyRepository.save(specialty));
+    }
+
+    @Override
     public void delete(Long id) {
         Specialty specialty = specialtyRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
-        specialtyRepository.delete(specialty);
+        specialty.setActive(false);
+        specialtyRepository.save(specialty);
     }
 }
 

@@ -212,20 +212,22 @@
     empty.style.display = 'none';
     const offset = (page.page || 0) * PAGE_SIZE;
     tbody.innerHTML = users.map((u, i) => `
-      <tr>
+      <tr style="${!u.isActive ? 'opacity:.6;' : ''}">
         <td>${offset + i + 1}</td>
         <td><strong>${u.username}</strong></td>
         <td>${u.fullName || '-'}</td>
         <td>${u.email}</td>
         <td>${u.phoneNumber || '-'}</td>
         <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
-        <td><span class="badge ${u.isActive ? 'badge-active' : 'badge-inactive'}">${u.isActive ? 'Hoạt động' : 'Bị khóa'}</span></td>
+        <td><span class="badge ${u.isActive ? 'badge-active' : 'badge-inactive'}">${u.isActive ? 'Hoạt động' : 'Đã xóa'}</span></td>
         <td>${fmtDate(u.createdAt)}</td>
         <td>
           <div class="actions">
             <button class="btn btn-info btn-sm" onclick="openEditModal(${u.id})" title="Sửa">&#9998;</button>
-            <button class="btn btn-warning btn-sm" onclick="toggleActive(${u.id})" title="${u.isActive ? 'Khóa' : 'Mở khóa'}">${u.isActive ? '&#128274;' : '&#128275;'}</button>
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${u.id}, '${u.username}')" title="Xóa">&#128465;</button>
+            <button class="btn btn-danger btn-sm"
+              onclick="confirmDelete(${u.id}, '${u.username}')"
+              title="${u.isActive ? 'Xóa' : 'Đã xóa'}"
+              ${!u.isActive ? 'disabled' : ''}>&#128465;</button>
           </div>
         </td>
       </tr>

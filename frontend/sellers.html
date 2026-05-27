@@ -45,6 +45,7 @@
                 <th>Chức danh</th>
                 <th>Chuyên khoa</th>
                 <th>Phí khám</th>
+                <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
@@ -218,17 +219,21 @@
     }
     empty.style.display = 'none';
     tbody.innerHTML = doctors.map((d, i) => `
-      <tr>
+      <tr style="${!d.isActive ? 'opacity:.6;' : ''}">
         <td>${i + 1}</td>
         <td><strong>${d.fullName || '-'}</strong></td>
         <td>${d.email || '-'}</td>
         <td>${d.title || '-'}</td>
         <td>${d.specialtyName || '-'}</td>
         <td>${fmtFee(d.consultationFee)}</td>
+        <td><span class="badge ${d.isActive ? 'badge-active' : 'badge-inactive'}">${d.isActive ? 'Hoạt động' : 'Đã xóa'}</span></td>
         <td>
           <div class="actions">
             <button class="btn btn-info btn-sm" onclick="openEditModal(${d.id})" title="Sửa">&#9998;</button>
-            <button class="btn btn-danger btn-sm" onclick="confirmDelete(${d.id}, '${(d.fullName || '').replace(/'/g, '')}')" title="Xóa">&#128465;</button>
+            <button class="btn btn-danger btn-sm"
+              onclick="confirmDelete(${d.id}, '${(d.fullName || '').replace(/'/g, '')}')"
+              title="${d.isActive ? 'Xóa' : 'Đã xóa'}"
+              ${!d.isActive ? 'disabled' : ''}>&#128465;</button>
           </div>
         </td>
       </tr>
