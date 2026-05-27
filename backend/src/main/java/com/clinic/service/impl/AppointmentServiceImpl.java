@@ -133,6 +133,12 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     @Override
+    public AppointmentResponse getById(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
+        return toResponse(appointment);
+    }
+
     public List<AppointmentResponse> listDoctorToday(String doctorUsername, LocalDate date) {
         User doctor = loadByUsername(doctorUsername);
         LocalDate target = date == null ? LocalDate.now() : date;

@@ -25,6 +25,11 @@ public class DoctorAppointmentController {
         return auth == null ? null : auth.getName();
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<AppointmentResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.getById(id));
+    }
+
     @GetMapping("/today")
     public ResponseEntity<List<AppointmentResponse>> today(@RequestParam(required = false) LocalDate date) {
         return ResponseEntity.ok(appointmentService.listDoctorToday(username(), date));

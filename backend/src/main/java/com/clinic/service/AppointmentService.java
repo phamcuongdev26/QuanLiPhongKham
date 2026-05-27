@@ -12,6 +12,8 @@ public interface AppointmentService {
     List<AppointmentResponse> listForPatient(String patientUsername);
     void cancelByPatient(String patientUsername, Long appointmentId);
 
+    AppointmentResponse getById(Long appointmentId);
+
     List<AppointmentResponse> listDoctorToday(String doctorUsername, LocalDate date);
     AppointmentResponse updateDoctorStatus(String doctorUsername, Long appointmentId, UpdateAppointmentStatusRequest request);
 }

@@ -129,10 +129,9 @@
   async function loadApptInfo() {
     const bar = document.getElementById('apptInfoBar');
     try {
-      const res = await fetch(`${API}/api/doctor/appointments/today`, { headers: authHeaders() });
-      const list = await res.json();
-      const appt = list.find(a => String(a.id) === String(appointmentId));
-      if (!appt) { bar.innerHTML = `<span>Lịch hẹn #${appointmentId}</span>`; return; }
+      const res = await fetch(`${API}/api/doctor/appointments/${appointmentId}`, { headers: authHeaders() });
+      const data = await res.json();
+      const appt = data.result || data;
       bar.innerHTML = `
         <span>Bệnh nhân: <strong>${appt.patientName}</strong></span>
         <span>Bác sĩ: <strong>${appt.doctorName}</strong></span>
