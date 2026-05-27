@@ -85,7 +85,7 @@
   const role  = localStorage.getItem('role');
   if (!token || role !== 'ADMIN') window.location.href = 'login.html';
 
-  const PAGE_SIZE = 15;
+  const PAGE_SIZE = 10;
   let currentPage = 0;
   let allAppts    = [];
   let filtered    = [];
