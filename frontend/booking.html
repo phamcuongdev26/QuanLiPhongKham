@@ -187,9 +187,7 @@
         return;
       }
       container.innerHTML = `<div class="slot-grid">${slots.map((s, i) => {
-        const start = new Date(s.startTime);
-        const end = new Date(s.endTime);
-        const label = `${pad(start.getHours())}:${pad(start.getMinutes())} - ${pad(end.getHours())}:${pad(end.getMinutes())}`;
+        const label = `${fmtTime(s.startTime)} - ${fmtTime(s.endTime)}`;
         return `<button class="slot-btn" data-idx="${i}" data-start="${s.startTime}" data-end="${s.endTime}" onclick="selectSlot(this, '${s.startTime}', '${s.endTime}')">${label}</button>`;
       }).join('')}</div>`;
     } catch (err) {
@@ -198,6 +196,19 @@
   }
 
   function pad(n) { return String(n).padStart(2, '0'); }
+  function parseLocalDateTime(dt) {
+    const [datePart, timePart = '00:00'] = String(dt).replace(' ', 'T').replace(/Z$/, '').split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour = 0, minute = 0] = timePart.split(':').map(Number);
+    return { year, month, day, hour, minute };
+  }
+  function fmtTime(dt) {
+    const p = parseLocalDateTime(dt);
+    return `${pad(p.hour)}:${pad(p.minute)}`;
+  }
+  function localDateInput(d = new Date()) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
 
   function selectSlot(btn, start, end) {
     document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
@@ -211,7 +222,7 @@
   });
 
   // Set min date to today
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateInput();
   document.getElementById('pickDate').min = today;
 
   async function submitBooking() {

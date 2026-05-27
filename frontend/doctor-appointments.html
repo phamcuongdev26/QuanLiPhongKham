@@ -119,7 +119,10 @@
     setTimeout(() => t.remove(), 3500);
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  function localDateInput(d = new Date()) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+  const today = localDateInput();
   document.getElementById('pickDate').value = today;
   document.getElementById('pickDate').addEventListener('change', () => { if (currentTab === 'bydate') loadByDate(); });
 
@@ -129,12 +132,19 @@
   }
 
   function pad(n) { return String(n).padStart(2, '0'); }
+  function parseLocalDateTime(dt) {
+    const [datePart, timePart = '00:00'] = String(dt).replace(' ', 'T').replace(/Z$/, '').split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour = 0, minute = 0] = timePart.split(':').map(Number);
+    return { year, month, day, hour, minute };
+  }
   function fmtTime(dt) {
-    const d = new Date(dt); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const p = parseLocalDateTime(dt);
+    return `${pad(p.hour)}:${pad(p.minute)}`;
   }
   function fmtDate(dt) {
-    const d = new Date(dt);
-    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+    const p = parseLocalDateTime(dt);
+    return `${pad(p.day)}/${pad(p.month)}/${p.year}`;
   }
 
   const STATUS_LABEL = {

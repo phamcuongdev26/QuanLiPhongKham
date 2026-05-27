@@ -28,7 +28,7 @@ shoppe_mvp/
 
 ### Connection URL
 ```
-jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
 ```
 
 ### Các bảng chính
@@ -88,7 +88,7 @@ openssl rsa -pubout -in private_key.pem -out public_key.pem
 
 ### 4. Set environment variables
 ```bash
-export DB_URL=jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+export DB_URL=jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true
 export DB_USERNAME=root
 export DB_PASSWORD=12345678
 export RSA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"

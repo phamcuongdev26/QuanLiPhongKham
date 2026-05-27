@@ -113,7 +113,19 @@
 
   function fmtDate(d) {
     if (!d) return '-';
-    return new Date(d).toLocaleString('vi-VN');
+    const p = parseLocalDateTime(d);
+    return `${pad(p.day)}/${pad(p.month)}/${p.year} ${pad(p.hour)}:${pad(p.minute)}`;
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function parseLocalDateTime(dt) {
+    const [datePart, timePart = '00:00'] = String(dt).replace(' ', 'T').replace(/Z$/, '').split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour = 0, minute = 0] = timePart.split(':').map(Number);
+    return { year, month, day, hour, minute };
+  }
+  function timeValue(dt) {
+    const p = parseLocalDateTime(dt);
+    return new Date(p.year, p.month - 1, p.day, p.hour, p.minute).getTime();
   }
 
   function fmtMoney(n) {
@@ -154,7 +166,7 @@
       const apptRes = await fetch(`${API}/api/admin/appointments`, { headers: authHeaders() });
       const appts = await apptRes.json();
       const list = (Array.isArray(appts) ? appts : appts.result || [])
-        .sort((a, b) => new Date(b.startTime) - new Date(a.startTime)).slice(0, 10);
+        .sort((a, b) => timeValue(b.startTime) - timeValue(a.startTime)).slice(0, 10);
       const tbody = document.getElementById('recentAppointmentsBody');
       if (list.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Chưa có dữ liệu</td></tr>';

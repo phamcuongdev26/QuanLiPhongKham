@@ -241,9 +241,18 @@
   }
 
   function pad(n) { return String(n).padStart(2, '0'); }
+  function parseLocalDateTime(dt) {
+    const [datePart, timePart = '00:00'] = String(dt).replace(' ', 'T').replace(/Z$/, '').split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour = 0, minute = 0] = timePart.split(':').map(Number);
+    return { year, month, day, hour, minute };
+  }
+  function localDateInput(d = new Date()) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
   function fmtDT(dt) {
-    const d = new Date(dt);
-    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const p = parseLocalDateTime(dt);
+    return `${pad(p.day)}/${pad(p.month)}/${p.year} ${pad(p.hour)}:${pad(p.minute)}`;
   }
 
   async function loadConfirmed() {
@@ -278,7 +287,7 @@
     }
   }
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateInput();
   document.getElementById('dayOffDate').min = todayStr;
 
   loadConfirmed();
