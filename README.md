@@ -10,6 +10,7 @@
 shoppe_mvp/
 ├── backend/          Spring Boot (package: com.clinic)
 ├── frontend/         HTML pages
+├── database/dump.sql DB schema + seed data
 ├── docker-compose.yml
 ├── Dockerfile
 └── README.md
@@ -48,10 +49,8 @@ jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Mi
 | `audit_logs` | Nhật ký thao tác admin |
 
 ### Khởi tạo DB
-File dump database không lưu trên GitHub. Lấy file `dump.sql` riêng rồi đặt ở thư mục gốc project trước khi import.
-
 ```bash
-mysql -u root -p12345678 clinic_db < dump.sql
+mysql -u root -p12345678 < database/dump.sql
 ```
 
 ---
@@ -60,22 +59,18 @@ mysql -u root -p12345678 clinic_db < dump.sql
 
 ### 1. Chạy bằng Docker
 ```bash
-docker compose up -d db
-docker exec -i clinic_db mysql -u root -p12345678 clinic_db < dump.sql
-docker compose up -d --build app
+docker compose up -d --build
 ```
 
 Nếu đã từng chạy DB cũ và muốn import lại dump từ đầu:
 ```bash
 docker compose down -v
-docker compose up -d db
-docker exec -i clinic_db mysql -u root -p12345678 clinic_db < dump.sql
-docker compose up -d --build app
+docker compose up -d --build
 ```
 
 ### 2. Chạy thủ công
 ```bash
-mysql -u root -p12345678 clinic_db < dump.sql
+mysql -u root -p12345678 < database/dump.sql
 cd backend
 mvn spring-boot:run
 ```
