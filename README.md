@@ -24,7 +24,7 @@ shoppe_mvp/
 | Host | `localhost:3306` |
 | Database | `clinic_db` |
 | Username | `root` |
-| Password | `12345678` |
+| Password | `123456` |
 | Charset | `utf8mb4_unicode_ci` |
 
 ### Connection URL
@@ -50,7 +50,7 @@ jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Mi
 
 ### Khởi tạo DB
 ```bash
-mysql -u root -p12345678 < database/dump.sql
+mysql -u root -p123456 < database/dump.sql
 ```
 
 ---
@@ -70,7 +70,7 @@ docker compose up -d --build
 
 ### 2. Chạy thủ công
 ```bash
-mysql -u root -p12345678 < database/dump.sql
+mysql -u root -p123456 < database/dump.sql
 cd backend
 mvn spring-boot:run
 ```
@@ -85,7 +85,7 @@ openssl rsa -pubout -in private_key.pem -out public_key.pem
 ```bash
 export DB_URL=jdbc:mysql://localhost:3306/clinic_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true
 export DB_USERNAME=root
-export DB_PASSWORD=12345678
+export DB_PASSWORD=123456
 export RSA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 export RSA_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 ```
