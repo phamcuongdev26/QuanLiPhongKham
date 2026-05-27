@@ -11,14 +11,20 @@ import java.time.LocalDateTime;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
-    @Query("""
-        SELECT a FROM AuditLog a
-        WHERE (:entityType IS NULL OR a.entityType = :entityType)
-          AND (:action IS NULL OR a.action = :action)
-          AND (:from IS NULL OR a.createdAt >= :from)
-          AND (:to IS NULL OR a.createdAt <= :to)
-        ORDER BY a.createdAt DESC
-    """)
+    @Query(value = """
+        SELECT * FROM audit_logs
+        WHERE (:entityType IS NULL OR entity_type = :entityType)
+          AND (:action IS NULL OR action = :action)
+          AND (:from IS NULL OR created_at >= :from)
+          AND (:to IS NULL OR created_at <= :to)
+        ORDER BY created_at DESC
+    """, countQuery = """
+        SELECT COUNT(*) FROM audit_logs
+        WHERE (:entityType IS NULL OR entity_type = :entityType)
+          AND (:action IS NULL OR action = :action)
+          AND (:from IS NULL OR created_at >= :from)
+          AND (:to IS NULL OR created_at <= :to)
+    """, nativeQuery = true)
     Page<AuditLog> findFiltered(
             @Param("entityType") String entityType,
             @Param("action") String action,

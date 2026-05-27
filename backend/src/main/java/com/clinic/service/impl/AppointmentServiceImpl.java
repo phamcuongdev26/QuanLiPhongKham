@@ -81,7 +81,7 @@ public class AppointmentServiceImpl implements AppointmentService {
                 doctor.getId(),
                 request.getStartTime(),
                 request.getEndTime(),
-                List.of(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED)
+                List.of(AppointmentStatus.PENDING.name(), AppointmentStatus.CONFIRMED.name())
         );
         if (overlapping) {
             throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);

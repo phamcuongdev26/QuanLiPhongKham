@@ -15,34 +15,34 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(Long doctorId, LocalDateTime from, LocalDateTime to);
 
-    @Query("""
-            SELECT COUNT(a) > 0 FROM Appointment a
-            WHERE a.doctor.id = :doctorId
+    @Query(value = """
+            SELECT COUNT(*) > 0 FROM appointments a
+            WHERE a.doctor_id = :doctorId
               AND a.status IN :activeStatuses
-              AND a.startTime < :endTime
-              AND a.endTime > :startTime
-            """)
+              AND a.start_time < :endTime
+              AND a.end_time > :startTime
+            """, nativeQuery = true)
     boolean existsOverlappingDoctorAppointment(@Param("doctorId") Long doctorId,
                                                @Param("startTime") LocalDateTime startTime,
                                                @Param("endTime") LocalDateTime endTime,
-                                               @Param("activeStatuses") List<AppointmentStatus> activeStatuses);
+                                               @Param("activeStatuses") List<String> activeStatuses);
 
     long countByStatus(AppointmentStatus status);
 
-    @Query("""
-            SELECT COALESCE(SUM(dp.consultationFee), 0)
-            FROM Appointment a
-            JOIN DoctorProfile dp ON dp.user.id = a.doctor.id
+    @Query(value = """
+            SELECT COALESCE(SUM(dp.consultation_fee), 0)
+            FROM appointments a
+            JOIN doctor_profiles dp ON dp.user_id = a.doctor_id
             WHERE a.status = :status
-            """)
-    long sumRevenueByCompletedStatus(@Param("status") AppointmentStatus status);
+            """, nativeQuery = true)
+    long sumRevenueByCompletedStatus(@Param("status") String status);
 
-    @Query("""
-            SELECT a.doctor.id
-            FROM Appointment a
+    @Query(value = """
+            SELECT a.doctor_id
+            FROM appointments a
             WHERE a.status = :status
-            GROUP BY a.doctor.id
+            GROUP BY a.doctor_id
             ORDER BY COUNT(a.id) DESC
-            """)
-    List<Long> findDoctorIdsByCompletedCountDesc(@Param("status") AppointmentStatus status);
+            """, nativeQuery = true)
+    List<Long> findDoctorIdsByCompletedCountDesc(@Param("status") String status);
 }

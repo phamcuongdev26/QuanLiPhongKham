@@ -31,8 +31,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     List<User> findTop5ByOrderByCreatedAtDesc();
 
-    @Query("SELECT COUNT(u) FROM User u WHERE u.role != :role AND u.createdAt >= :from AND u.createdAt < :to")
-    long countNonAdminBetween(@Param("role") Role role,
+    @Query(value = "SELECT COUNT(*) FROM users WHERE role != :role AND created_at >= :from AND created_at < :to",
+           nativeQuery = true)
+    long countNonAdminBetween(@Param("role") String role,
                               @Param("from") LocalDateTime from,
                               @Param("to") LocalDateTime to);
 }

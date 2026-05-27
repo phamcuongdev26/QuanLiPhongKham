@@ -33,10 +33,10 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         result.put("totalDoctors", userRepository.countByRole(Role.DOCTOR));
         result.put("totalPatients", userRepository.countByRole(Role.PATIENT));
 
-        long revenue = appointmentRepository.sumRevenueByCompletedStatus(AppointmentStatus.COMPLETED);
+        long revenue = appointmentRepository.sumRevenueByCompletedStatus(AppointmentStatus.COMPLETED.name());
         result.put("revenue", revenue);
 
-        List<Long> doctorIds = appointmentRepository.findDoctorIdsByCompletedCountDesc(AppointmentStatus.COMPLETED);
+        List<Long> doctorIds = appointmentRepository.findDoctorIdsByCompletedCountDesc(AppointmentStatus.COMPLETED.name());
         if (!doctorIds.isEmpty()) {
             Long busiestDoctorId = doctorIds.get(0);
             User doctor = userRepository.findById(busiestDoctorId).orElse(null);
