@@ -173,8 +173,27 @@
         <span>Giờ khám: <strong>${fmtDateTime(appt.startTime)}</strong></span>
         ${appt.symptomDescription ? `<span>Triệu chứng: <strong>${appt.symptomDescription}</strong></span>` : ''}
       `;
+      await loadMedicalHistory();
     } catch (err) {
       bar.innerHTML = `<span>${err.message || `Lịch hẹn #${appointmentId}`}</span>`;
+    }
+  }
+
+  async function loadMedicalHistory() {
+    if (!appointmentId) return;
+    try {
+      const res = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Không thể tải hồ sơ bệnh án');
+
+      document.getElementById('diagnosis').value = data.diagnosis || '';
+      document.getElementById('clinicalNote').value = data.clinicalNote || '';
+      document.getElementById('prxNote').value = data.prescription?.note || '';
+      setDrugRows(data.prescription?.items || []);
+    } catch (err) {
+      toast(err.message || 'Không thể tải hồ sơ bệnh án', 'error');
+      setDrugRows([]);
     }
   }
 
@@ -211,7 +230,14 @@
     loadApptInfo();
   }
 
-  function addDrug() {
+  function setDrugRows(items) {
+    const container = document.getElementById('drugRows');
+    container.innerHTML = '';
+    const rows = Array.isArray(items) && items.length ? items : [{}];
+    rows.forEach(item => addDrug(item));
+  }
+
+  function addDrug(item = {}) {
     const container = document.getElementById('drugRows');
     const row = document.createElement('div');
     row.className = 'drug-row';
@@ -223,6 +249,11 @@
       <input type="text" placeholder="Uống sau ăn" class="drug-inst" />
       <button class="remove-drug" onclick="this.closest('.drug-row').remove()">Xóa</button>
     `;
+    row.querySelector('.drug-name').value = item.drugName || '';
+    row.querySelector('.drug-dosage').value = item.dosage || '';
+    row.querySelector('.drug-freq').value = item.frequency || '';
+    row.querySelector('.drug-dur').value = item.duration || '';
+    row.querySelector('.drug-inst').value = item.instruction || '';
     container.appendChild(row);
   }
 

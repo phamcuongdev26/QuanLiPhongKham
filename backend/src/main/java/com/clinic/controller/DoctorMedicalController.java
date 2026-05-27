@@ -3,6 +3,7 @@ package com.clinic.controller;
 import com.clinic.dto.request.UpsertMedicalRecordRequest;
 import com.clinic.dto.request.UpsertPrescriptionRequest;
 import com.clinic.dto.response.ApiResponse;
+import com.clinic.dto.response.PatientHistoryResponse;
 import com.clinic.service.MedicalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,11 @@ public class DoctorMedicalController {
     private String username() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         return auth == null ? null : auth.getName();
+    }
+
+    @GetMapping("/appointments/{id}")
+    public ResponseEntity<PatientHistoryResponse> getMedicalHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(medicalService.getMedicalHistory(username(), id));
     }
 
     @PutMapping("/appointments/{id}/record")

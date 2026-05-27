@@ -4,6 +4,7 @@ import com.clinic.constant.AppointmentStatus;
 import com.clinic.dto.request.UpsertMedicalRecordRequest;
 import com.clinic.dto.request.UpsertPrescriptionItemRequest;
 import com.clinic.dto.request.UpsertPrescriptionRequest;
+import com.clinic.dto.response.PatientHistoryResponse;
 import com.clinic.entity.Appointment;
 import com.clinic.entity.MedicalRecord;
 import com.clinic.entity.Prescription;
@@ -46,6 +47,34 @@ public class MedicalServiceImpl implements MedicalService {
             throw new AppException(ErrorCode.APPOINTMENT_INVALID_STATUS);
         }
         return appointment;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PatientHistoryResponse getMedicalHistory(String doctorUsername, Long appointmentId) {
+        User doctor = doctor(doctorUsername);
+        Appointment appointment = doctorAppointment(doctor, appointmentId);
+        MedicalRecord record = medicalRecordRepository.findById(appointment.getId()).orElse(null);
+        Prescription prescription = prescriptionRepository.findByIdInWithItems(List.of(appointment.getId()))
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        return PatientHistoryResponse.builder()
+                .appointmentId(appointment.getId())
+                .patientId(appointment.getPatient().getId())
+                .patientName(appointment.getPatient().getFullName())
+                .doctorName(appointment.getDoctor().getFullName())
+                .specialtyName(appointment.getSpecialty() == null ? null : appointment.getSpecialty().getName())
+                .startTime(appointment.getStartTime())
+                .endTime(appointment.getEndTime())
+                .symptomDescription(appointment.getSymptomDescription())
+                .status(appointment.getStatus())
+                .doctorNote(appointment.getDoctorNote())
+                .diagnosis(record == null ? null : record.getDiagnosis())
+                .clinicalNote(record == null ? null : record.getClinicalNote())
+                .prescription(toPrescriptionHistory(prescription))
+                .build();
     }
 
     @Override
@@ -97,6 +126,26 @@ public class MedicalServiceImpl implements MedicalService {
                     .build());
         }
         prescriptionRepository.save(prescription);
+    }
+
+    private PatientHistoryResponse.PrescriptionHistory toPrescriptionHistory(Prescription prescription) {
+        if (prescription == null) {
+            return null;
+        }
+        return PatientHistoryResponse.PrescriptionHistory.builder()
+                .note(prescription.getNote())
+                .createdAt(prescription.getCreatedAt())
+                .items(prescription.getItems().stream()
+                        .map(item -> PatientHistoryResponse.PrescriptionItemHistory.builder()
+                                .id(item.getId())
+                                .drugName(item.getDrugName())
+                                .dosage(item.getDosage())
+                                .frequency(item.getFrequency())
+                                .duration(item.getDuration())
+                                .instruction(item.getInstruction())
+                                .build())
+                        .toList())
+                .build();
     }
 }
 
