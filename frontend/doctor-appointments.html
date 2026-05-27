@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lịch hẹn hôm nay - Bác sĩ</title>
+  <title>Lịch hẹn - Bác sĩ</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     .appt-row { display: grid; grid-template-columns: 100px 1fr 160px; gap: 16px; align-items: center; }
@@ -21,7 +21,14 @@
     .status-COMPLETED { background: #eafaf1; color: #27ae60; }
     .status-CANCELED { background: #f0f0f0; color: #999; }
     .status-REJECTED { background: #fdecea; color: #e74c3c; }
-    .date-picker-bar { padding: 16px 28px; display: flex; align-items: center; gap: 12px; }
+    .tab-bar { padding: 0 28px; display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 0; }
+    .tab-btn {
+      padding: 10px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
+      border: none; background: none; color: var(--text-light);
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+    }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .date-picker-bar { padding: 14px 28px; display: flex; align-items: center; gap: 12px; }
     .date-picker-bar input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: .9rem; outline: none; }
     .date-picker-bar input:focus { border-color: var(--primary); }
   </style>
@@ -33,7 +40,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn-logout" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -45,10 +52,17 @@
       </div>
     </div>
 
-    <div class="date-picker-bar">
-      <label style="font-size:.9rem;font-weight:600;">Ngày:</label>
-      <input type="date" id="pickDate" />
-      <button class="btn btn-outline btn-sm" onclick="goToday()">Hôm nay</button>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabUpcoming" onclick="switchTab('upcoming')">Sắp tới</button>
+      <button class="tab-btn" id="tabByDate" onclick="switchTab('bydate')">Theo ngày</button>
+    </div>
+
+    <div id="byDateBar" style="display:none;">
+      <div class="date-picker-bar">
+        <label style="font-size:.9rem;font-weight:600;">Ngày:</label>
+        <input type="date" id="pickDate" />
+        <button class="btn btn-outline btn-sm" onclick="goToday()">Hôm nay</button>
+      </div>
     </div>
 
     <div style="padding: 0 28px 28px;" id="listContainer">
@@ -62,14 +76,13 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modalTitle">Cập nhật lịch hẹn</h3>
-      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
         <label>Trạng thái</label>
         <select id="statusSelect">
           <option value="CONFIRMED">Xác nhận</option>
-          <option value="COMPLETED">Hoàn thành</option>
           <option value="REJECTED">Từ chối</option>
         </select>
       </div>
@@ -91,36 +104,37 @@
   const API = 'http://localhost:8080';
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
-  const username = localStorage.getItem('username');
 
   if (!token || role !== 'DOCTOR') window.location.href = 'login.html';
 
   function logout() { localStorage.clear(); window.location.href = 'login.html'; }
-
   function authHeaders() { return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }; }
 
   function toast(msg, type = 'success') {
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
 
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('pickDate').value = today;
-  document.getElementById('pickDate').addEventListener('change', () => loadAppointments());
+  document.getElementById('pickDate').addEventListener('change', () => { if (currentTab === 'bydate') loadByDate(); });
 
   function goToday() {
     document.getElementById('pickDate').value = today;
-    loadAppointments();
+    loadByDate();
   }
 
   function pad(n) { return String(n).padStart(2, '0'); }
   function fmtTime(dt) {
+    const d = new Date(dt); return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function fmtDate(dt) {
     const d = new Date(dt);
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
   }
 
   const STATUS_LABEL = {
@@ -128,7 +142,17 @@
     COMPLETED: 'Hoàn thành', CANCELED: 'Đã hủy', REJECTED: 'Từ chối'
   };
 
+  let currentTab = 'upcoming';
   let currentApptId = null;
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tabUpcoming').classList.toggle('active', tab === 'upcoming');
+    document.getElementById('tabByDate').classList.toggle('active', tab === 'bydate');
+    document.getElementById('byDateBar').style.display = tab === 'bydate' ? 'block' : 'none';
+    if (tab === 'upcoming') loadUpcoming();
+    else loadByDate();
+  }
 
   function openModal(appt) {
     currentApptId = appt.id;
@@ -159,13 +183,58 @@
       if (status === 'COMPLETED') {
         setTimeout(() => window.location.href = `doctor-records.html?appointmentId=${currentApptId || data.id}`, 500);
       }
-      loadAppointments();
+      if (currentTab === 'upcoming') loadUpcoming(); else loadByDate();
     } catch (err) {
       toast(err.message, 'error');
     }
   }
 
-  async function loadAppointments() {
+  function renderTable(list, showDate = false) {
+    const container = document.getElementById('listContainer');
+    if (!list.length) {
+      container.innerHTML = `<div class="empty-state"><p>Không có lịch hẹn nào</p></div>`;
+      return;
+    }
+    container.innerHTML = `<div class="card">
+      <div class="table-wrap"><table>
+        <thead><tr>
+          ${showDate ? '<th>Ngày</th>' : ''}
+          <th>Giờ</th><th>Bệnh nhân</th><th>Chuyên khoa</th><th>Triệu chứng</th><th>Trạng thái</th><th>Thao tác</th>
+        </tr></thead>
+        <tbody>${list.map(a => `
+          <tr>
+            ${showDate ? `<td><strong>${fmtDate(a.startTime)}</strong></td>` : ''}
+            <td><strong>${fmtTime(a.startTime)} – ${fmtTime(a.endTime)}</strong></td>
+            <td>${a.patientName || '-'}</td>
+            <td>${a.specialtyName || '-'}</td>
+            <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.symptomDescription || '-'}</td>
+            <td><span class="status-badge status-${a.status}">${STATUS_LABEL[a.status] || a.status}</span></td>
+            <td class="actions">
+              ${a.status !== 'COMPLETED' && a.status !== 'CANCELED' && a.status !== 'REJECTED' ? `
+                <button class="btn btn-info btn-sm" onclick='openModal(${JSON.stringify(a)})'>Cập nhật</button>
+              ` : ''}
+              <a href="doctor-records.html?appointmentId=${a.id}" class="btn btn-success btn-sm">Hồ sơ</a>
+            </td>
+          </tr>
+        `).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }
+
+  async function loadUpcoming() {
+    const container = document.getElementById('listContainer');
+    container.innerHTML = '<div style="text-align:center;padding:48px;color:#999;">Đang tải...</div>';
+    try {
+      const res = await fetch(`${API}/api/doctor/appointments/upcoming`, { headers: authHeaders() });
+      if (res.status === 401) { logout(); return; }
+      const list = await res.json();
+      renderTable(list, true);
+    } catch {
+      container.innerHTML = '<div style="color:var(--danger);text-align:center;padding:40px;">Không thể tải dữ liệu</div>';
+    }
+  }
+
+  async function loadByDate() {
     const date = document.getElementById('pickDate').value;
     const container = document.getElementById('listContainer');
     container.innerHTML = '<div style="text-align:center;padding:48px;color:#999;">Đang tải...</div>';
@@ -173,40 +242,13 @@
       const res = await fetch(`${API}/api/doctor/appointments/today?date=${date}`, { headers: authHeaders() });
       if (res.status === 401) { logout(); return; }
       const list = await res.json();
-      if (!list.length) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Không có lịch hẹn trong ngày này</p></div>`;
-        return;
-      }
-      container.innerHTML = `<div class="card">
-        <div class="table-wrap"><table>
-          <thead><tr>
-            <th>Giờ</th><th>Bệnh nhân</th><th>Chuyên khoa</th><th>Triệu chứng</th><th>Trạng thái</th><th>Thao tác</th>
-          </tr></thead>
-          <tbody>${list.map(a => `
-            <tr>
-              <td><strong>${fmtTime(a.startTime)} – ${fmtTime(a.endTime)}</strong></td>
-              <td>${a.patientName || '-'}</td>
-              <td>${a.specialtyName || '-'}</td>
-              <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.symptomDescription || '-'}</td>
-              <td><span class="status-badge status-${a.status}">${STATUS_LABEL[a.status] || a.status}</span></td>
-              <td class="actions">
-                ${a.status !== 'COMPLETED' && a.status !== 'CANCELED' && a.status !== 'REJECTED' ? `
-                  <button class="btn btn-info btn-sm" onclick='openModal(${JSON.stringify(a)})'>Cập nhật</button>
-                ` : ''}
-                ${a.status === 'COMPLETED' ? `
-                  <a href="doctor-records.html?appointmentId=${a.id}" class="btn btn-success btn-sm">Hồ sơ</a>
-                ` : ''}
-              </td>
-            </tr>
-          `).join('')}</tbody>
-        </table></div>
-      </div>`;
-    } catch (err) {
+      renderTable(list, false);
+    } catch {
       container.innerHTML = '<div style="color:var(--danger);text-align:center;padding:40px;">Không thể tải dữ liệu</div>';
     }
   }
 
-  loadAppointments();
+  loadUpcoming();
 </script>
 <script src="sidebar.js"></script>
 </body>

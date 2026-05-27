@@ -11,7 +11,12 @@ import com.clinic.entity.Specialty;
 import com.clinic.entity.User;
 import com.clinic.exception.AppException;
 import com.clinic.exception.ErrorCode;
+import com.clinic.entity.DoctorProfile;
+import com.clinic.entity.DoctorWorkShift;
 import com.clinic.repository.AppointmentRepository;
+import com.clinic.repository.DoctorDayOffRepository;
+import com.clinic.repository.DoctorProfileRepository;
+import com.clinic.repository.DoctorWorkShiftRepository;
 import com.clinic.repository.SpecialtyRepository;
 import com.clinic.repository.UserRepository;
 import com.clinic.service.AppointmentService;
@@ -33,12 +38,16 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final UserRepository userRepository;
     private final SpecialtyRepository specialtyRepository;
     private final NotificationService notificationService;
+    private final DoctorDayOffRepository doctorDayOffRepository;
+    private final DoctorWorkShiftRepository doctorWorkShiftRepository;
+    private final DoctorProfileRepository doctorProfileRepository;
 
     private AppointmentResponse toResponse(Appointment a) {
         return AppointmentResponse.builder()
                 .id(a.getId())
                 .patientId(a.getPatient().getId())
                 .patientName(a.getPatient().getFullName())
+                .patientPhone(a.getPatient().getPhoneNumber())
                 .doctorId(a.getDoctor().getId())
                 .doctorName(a.getDoctor().getFullName())
                 .specialtyId(a.getSpecialty() == null ? null : a.getSpecialty().getId())
@@ -63,6 +72,11 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AppException(ErrorCode.INVALID_TIME_RANGE);
         }
 
+        // Không cho đặt lịch trong quá khứ
+        if (request.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new AppException(ErrorCode.INVALID_TIME_RANGE);
+        }
+
         User patient = loadByUsername(patientUsername);
         if (patient.getRole() != Role.PATIENT) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
@@ -77,12 +91,38 @@ public class AppointmentServiceImpl implements AppointmentService {
         Specialty specialty = specialtyRepository.findById(request.getSpecialtyId())
                 .orElseThrow(() -> new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
 
+        // Kiểm tra bác sĩ thuộc đúng chuyên khoa
+        DoctorProfile profile = doctorProfileRepository.findById(doctor.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
+        if (profile.getSpecialty() == null || !profile.getSpecialty().getId().equals(specialty.getId())) {
+            throw new AppException(ErrorCode.DOCTOR_NOT_FOUND);
+        }
+
+        // Kiểm tra bác sĩ không nghỉ ngày đó
+        LocalDate appointmentDate = request.getStartTime().toLocalDate();
+        if (doctorDayOffRepository.existsByDoctor_IdAndDayOff(doctor.getId(), appointmentDate)) {
+            throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);
+        }
+
+        // Kiểm tra slot nằm trong ca làm việc của bác sĩ
+        List<DoctorWorkShift> shifts = doctorWorkShiftRepository
+                .findByDoctor_IdAndIsActiveTrue(doctor.getId())
+                .stream()
+                .filter(s -> s.getDayOfWeek() == appointmentDate.getDayOfWeek())
+                .toList();
+        boolean withinShift = shifts.stream().anyMatch(s ->
+                !request.getStartTime().toLocalTime().isBefore(s.getStartTime()) &&
+                !request.getEndTime().toLocalTime().isAfter(s.getEndTime()));
+        if (!withinShift) {
+            throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);
+        }
+
         boolean overlapping = appointmentRepository.existsOverlappingDoctorAppointment(
                 doctor.getId(),
                 request.getStartTime(),
                 request.getEndTime(),
                 List.of(AppointmentStatus.PENDING.name(), AppointmentStatus.CONFIRMED.name())
-        );
+        ) > 0;
         if (overlapping) {
             throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);
         }
@@ -100,6 +140,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         notificationService.send(patient, NotificationType.APPOINTMENT_CREATED,
                 "Đặt lịch thành công",
                 "Lịch hẹn với bác sĩ " + doctor.getFullName() + " lúc " + saved.getStartTime() + " đang chờ xác nhận.",
+                saved.getId());
+        notificationService.send(doctor, NotificationType.APPOINTMENT_CREATED,
+                "Lịch hẹn mới",
+                "Bệnh nhân " + patient.getFullName() + " đã đặt lịch lúc " + saved.getStartTime() + ".",
                 saved.getId());
         return toResponse(saved);
     }
@@ -139,6 +183,17 @@ public class AppointmentServiceImpl implements AppointmentService {
         return toResponse(appointment);
     }
 
+    @Override
+    public AppointmentResponse getByIdForDoctor(String doctorUsername, Long appointmentId) {
+        User doctor = loadByUsername(doctorUsername);
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
+        if (!appointment.getDoctor().getId().equals(doctor.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+        return toResponse(appointment);
+    }
+
     public List<AppointmentResponse> listDoctorToday(String doctorUsername, LocalDate date) {
         User doctor = loadByUsername(doctorUsername);
         LocalDate target = date == null ? LocalDate.now() : date;
@@ -147,6 +202,16 @@ public class AppointmentServiceImpl implements AppointmentService {
         return appointmentRepository.findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(doctor.getId(), from, to).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Override
+    public List<AppointmentResponse> listDoctorUpcoming(String doctorUsername) {
+        User doctor = loadByUsername(doctorUsername);
+        return appointmentRepository.findUpcomingByDoctor(
+                doctor.getId(),
+                List.of(AppointmentStatus.PENDING.name(), AppointmentStatus.CONFIRMED.name()),
+                LocalDateTime.now()
+        ).stream().map(this::toResponse).toList();
     }
 
     @Override

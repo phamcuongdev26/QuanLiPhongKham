@@ -18,5 +18,12 @@ Thumbs.db
 .env
 *.local
 
+# Certificates & private keys — không được commit vào repo
+backend/src/main/resources/certs/private.pem
+*.pem
+*.key
+*.p12
+*.jks
+
 # Claude
 .claude/

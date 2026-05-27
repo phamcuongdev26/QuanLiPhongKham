@@ -1,12 +1,18 @@
 package com.clinic.controller;
 
+import com.clinic.constant.Role;
 import com.clinic.dto.response.PatientHistoryResponse;
 import com.clinic.entity.Appointment;
 import com.clinic.entity.MedicalRecord;
+import com.clinic.entity.User;
+import com.clinic.exception.AppException;
+import com.clinic.exception.ErrorCode;
 import com.clinic.repository.AppointmentRepository;
 import com.clinic.repository.MedicalRecordRepository;
+import com.clinic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,9 +26,30 @@ public class PatientHistoryController {
 
     private final AppointmentRepository appointmentRepository;
     private final MedicalRecordRepository medicalRecordRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/{id}/history")
-    public ResponseEntity<List<PatientHistoryResponse>> history(@PathVariable Long id) {
+    public ResponseEntity<List<PatientHistoryResponse>> history(@PathVariable Long id, Authentication auth) {
+        User caller = userRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
+
+        boolean isAdmin = caller.getRole() == Role.ADMIN;
+        boolean isOwner = caller.getId().equals(id);
+        boolean isDoctor = caller.getRole() == Role.DOCTOR;
+
+        if (!isAdmin && !isOwner && !isDoctor) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // Bác sĩ chỉ được xem lịch sử bệnh nhân từng khám với mình
+        if (isDoctor) {
+            boolean hasRelation = appointmentRepository
+                    .findByPatient_IdOrderByStartTimeDesc(id)
+                    .stream()
+                    .anyMatch(a -> a.getDoctor().getId().equals(caller.getId()));
+            if (!hasRelation) throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         List<Appointment> appointments = appointmentRepository.findByPatient_IdOrderByStartTimeDesc(id);
 
         List<Long> apptIds = appointments.stream().map(Appointment::getId).toList();

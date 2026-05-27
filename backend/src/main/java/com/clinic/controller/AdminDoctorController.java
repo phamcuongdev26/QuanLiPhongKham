@@ -22,6 +22,11 @@ public class AdminDoctorController {
     private final DoctorService doctorService;
     private final AuditLogService auditLogService;
 
+    @GetMapping
+    public ResponseEntity<List<DoctorSummaryResponse>> getAll() {
+        return ResponseEntity.ok(doctorService.listAll());
+    }
+
     @PostMapping
     public ResponseEntity<DoctorSummaryResponse> create(
             @Valid @RequestBody AdminCreateDoctorRequest request,

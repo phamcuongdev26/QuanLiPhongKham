@@ -1,6 +1,5 @@
 package com.clinic.service.impl;
 
-import com.clinic.constant.AppointmentStatus;
 import com.clinic.dto.response.TimeSlotResponse;
 import com.clinic.entity.Appointment;
 import com.clinic.entity.DoctorWorkShift;
@@ -15,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -48,10 +46,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         LocalDateTime from = date.atStartOfDay();
         LocalDateTime to = date.atTime(LocalTime.MAX);
         List<Appointment> appointments = appointmentRepository
-                .findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(doctorId, from, to).stream()
-                .filter(a -> a.getStatus() == AppointmentStatus.PENDING || a.getStatus() == AppointmentStatus.CONFIRMED)
-                .sorted(Comparator.comparing(Appointment::getStartTime))
-                .toList();
+                .findActiveByDoctorAndDateRange(doctorId, from, to);
 
         List<TimeSlotResponse> slots = new ArrayList<>();
         for (DoctorWorkShift shift : shifts) {

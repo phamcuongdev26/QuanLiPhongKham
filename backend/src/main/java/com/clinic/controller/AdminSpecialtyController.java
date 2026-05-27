@@ -22,6 +22,11 @@ public class AdminSpecialtyController {
     private final SpecialtyService specialtyService;
     private final AuditLogService auditLogService;
 
+    @GetMapping
+    public ResponseEntity<List<SpecialtyResponse>> getAll() {
+        return ResponseEntity.ok(specialtyService.listAll());
+    }
+
     @PostMapping
     public ResponseEntity<SpecialtyResponse> create(
             @Valid @RequestBody CreateSpecialtyRequest request,

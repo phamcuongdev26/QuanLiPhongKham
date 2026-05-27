@@ -45,48 +45,14 @@ public class MedicalServiceImpl implements MedicalService {
         if (!appointment.getDoctor().getId().equals(doctor.getId())) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
-        if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
+        if (appointment.getStatus() == AppointmentStatus.CANCELED
+                || appointment.getStatus() == AppointmentStatus.REJECTED
+                || appointment.getStatus() == AppointmentStatus.PENDING) {
             throw new AppException(ErrorCode.APPOINTMENT_INVALID_STATUS);
         }
         return appointment;
     }
 
-    private MedicalRecordResponse toResponse(MedicalRecord rec) {
-        Appointment a = rec.getAppointment();
-        Prescription prx = prescriptionRepository.findByAppointment_Id(a.getId()).orElse(null);
-
-        PrescriptionResponse prxResponse = null;
-        if (prx != null) {
-            List<PrescriptionItemResponse> items = prx.getItems().stream()
-                    .map(i -> PrescriptionItemResponse.builder()
-                            .id(i.getId())
-                            .drugName(i.getDrugName())
-                            .dosage(i.getDosage())
-                            .frequency(i.getFrequency())
-                            .duration(i.getDuration())
-                            .instruction(i.getInstruction())
-                            .build())
-                    .toList();
-            prxResponse = PrescriptionResponse.builder()
-                    .note(prx.getNote())
-                    .createdAt(prx.getCreatedAt())
-                    .items(items)
-                    .build();
-        }
-
-        return MedicalRecordResponse.builder()
-                .appointmentId(a.getId())
-                .patientName(a.getPatient().getFullName())
-                .patientPhone(a.getPatient().getPhoneNumber())
-                .specialtyName(a.getSpecialty() == null ? null : a.getSpecialty().getName())
-                .startTime(a.getStartTime())
-                .status(a.getStatus())
-                .symptomDescription(a.getSymptomDescription())
-                .diagnosis(rec.getDiagnosis())
-                .clinicalNote(rec.getClinicalNote())
-                .prescription(prxResponse)
-                .build();
-    }
 
     @Override
     @Transactional
@@ -143,9 +109,14 @@ public class MedicalServiceImpl implements MedicalService {
     @Transactional(readOnly = true)
     public List<MedicalRecordResponse> getDoctorRecords(String doctorUsername) {
         User doc = doctor(doctorUsername);
-        return medicalRecordRepository.findByAppointment_Doctor_Id(doc.getId()).stream()
-                .map(this::toResponse)
-                .toList();
+        List<Appointment> appointments = appointmentRepository.findByDoctorAndStatuses(
+                doc.getId(),
+                List.of(AppointmentStatus.CONFIRMED.name(), AppointmentStatus.COMPLETED.name())
+        );
+        return appointments.stream().map(a -> {
+            MedicalRecord rec = medicalRecordRepository.findById(a.getId()).orElse(null);
+            return toResponseFromAppointment(a, rec);
+        }).toList();
     }
 
     @Override
@@ -157,8 +128,33 @@ public class MedicalServiceImpl implements MedicalService {
         if (!appointment.getDoctor().getId().equals(doc.getId())) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
-        MedicalRecord record = medicalRecordRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppException(ErrorCode.APPOINTMENT_NOT_FOUND));
-        return toResponse(record);
+        MedicalRecord record = medicalRecordRepository.findById(appointmentId).orElse(null);
+        return toResponseFromAppointment(appointment, record);
+    }
+
+    private MedicalRecordResponse toResponseFromAppointment(Appointment a, MedicalRecord rec) {
+        Prescription prx = prescriptionRepository.findByAppointment_Id(a.getId()).orElse(null);
+        PrescriptionResponse prxResponse = null;
+        if (prx != null) {
+            List<PrescriptionItemResponse> items = prx.getItems().stream()
+                    .map(i -> PrescriptionItemResponse.builder()
+                            .id(i.getId()).drugName(i.getDrugName()).dosage(i.getDosage())
+                            .frequency(i.getFrequency()).duration(i.getDuration()).instruction(i.getInstruction())
+                            .build())
+                    .toList();
+            prxResponse = PrescriptionResponse.builder().note(prx.getNote()).createdAt(prx.getCreatedAt()).items(items).build();
+        }
+        return MedicalRecordResponse.builder()
+                .appointmentId(a.getId())
+                .patientName(a.getPatient().getFullName())
+                .patientPhone(a.getPatient().getPhoneNumber())
+                .specialtyName(a.getSpecialty() == null ? null : a.getSpecialty().getName())
+                .startTime(a.getStartTime())
+                .status(a.getStatus())
+                .symptomDescription(a.getSymptomDescription())
+                .diagnosis(rec != null ? rec.getDiagnosis() : null)
+                .clinicalNote(rec != null ? rec.getClinicalNote() : null)
+                .prescription(prxResponse)
+                .build();
     }
 }

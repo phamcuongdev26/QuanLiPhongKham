@@ -1,6 +1,8 @@
 package com.clinic.exception;
 
 import com.clinic.dto.response.ApiResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +12,8 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
@@ -36,10 +40,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleException(Exception ex) {
+        log.error("Unhandled exception", ex);
         return ResponseEntity.status(500)
                 .body(ApiResponse.<Void>builder()
                         .code(9999)
-                        .message("Lỗi hệ thống: " + ex.getMessage())
+                        .message("Lỗi hệ thống, vui lòng thử lại sau")
                         .build());
     }
 }

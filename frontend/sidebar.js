@@ -1,3 +1,14 @@
+// Escape HTML để chống XSS khi render dữ liệu từ API vào innerHTML
+window.escHtml = function(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
 (function () {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');

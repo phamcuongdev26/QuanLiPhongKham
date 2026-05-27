@@ -13,8 +13,10 @@ public interface AppointmentService {
     void cancelByPatient(String patientUsername, Long appointmentId);
 
     AppointmentResponse getById(Long appointmentId);
+    AppointmentResponse getByIdForDoctor(String doctorUsername, Long appointmentId);
 
     List<AppointmentResponse> listDoctorToday(String doctorUsername, LocalDate date);
+    List<AppointmentResponse> listDoctorUpcoming(String doctorUsername);
     AppointmentResponse updateDoctorStatus(String doctorUsername, Long appointmentId, UpdateAppointmentStatusRequest request);
 }
 

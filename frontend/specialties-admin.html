@@ -25,7 +25,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn-logout" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -60,7 +60,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3>Thêm chuyên khoa mới</h3>
-      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div id="modalAlert" class="alert alert-error"></div>
@@ -88,7 +88,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3>Chỉnh sửa chuyên khoa</h3>
-      <button class="modal-close" onclick="closeEditModal()">&#x2715;</button>
+      <button class="modal-close" onclick="closeEditModal()">&times;</button>
     </div>
     <div class="modal-body">
       <div id="editModalAlert" class="alert alert-error"></div>
@@ -120,7 +120,7 @@
 <!-- CONFIRM DELETE -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
-    <div class="confirm-icon">&#9888;</div>
+    <div class="confirm-icon"></div>
     <h3>Xác nhận xóa</h3>
     <p id="confirmMsg">Bạn có chắc muốn xóa chuyên khoa này?</p>
     <div class="confirm-actions">
@@ -149,7 +149,7 @@
     const c = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '&#9989;' : '&#10060;'}</span> ${msg}`;
+    t.innerHTML = `<span>${type === 'success' ? '' : ''}</span> ${msg}`;
     c.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
@@ -181,11 +181,11 @@
         <div class="spec-footer">
           <span class="badge ${s.isActive ? 'badge-active' : 'badge-inactive'}">${s.isActive ? 'Hoạt động' : 'Đã xóa'}</span>
           <div style="display:flex;gap:6px;">
-            <button class="btn btn-info btn-sm" onclick="openEditModal(${s.id})" title="Sửa">&#9998;</button>
+            <button class="btn btn-info btn-sm" onclick="openEditModal(${s.id})" title="Sửa">Sửa</button>
             <button class="btn btn-danger btn-sm"
               onclick="confirmDelete(${s.id}, '${s.name.replace(/'/g, '')}')"
               ${!s.isActive ? 'disabled title="Đã xóa"' : ''}>
-              &#128465;
+              Xóa
             </button>
           </div>
         </div>

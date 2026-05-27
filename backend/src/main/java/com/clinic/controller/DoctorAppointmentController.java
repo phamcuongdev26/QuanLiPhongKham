@@ -30,7 +30,12 @@ public class DoctorAppointmentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<AppointmentResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(appointmentService.getById(id));
+        return ResponseEntity.ok(appointmentService.getByIdForDoctor(username(), id));
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<AppointmentResponse>> upcoming() {
+        return ResponseEntity.ok(appointmentService.listDoctorUpcoming(username()));
     }
 
     @GetMapping("/today")

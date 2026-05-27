@@ -16,16 +16,46 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(Long doctorId, LocalDateTime from, LocalDateTime to);
 
     @Query(value = """
+            SELECT * FROM appointments
+            WHERE doctor_id = :doctorId
+              AND start_time BETWEEN :from AND :to
+              AND status IN ('PENDING','CONFIRMED')
+            ORDER BY start_time ASC
+            """, nativeQuery = true)
+    List<Appointment> findActiveByDoctorAndDateRange(@Param("doctorId") Long doctorId,
+                                                     @Param("from") LocalDateTime from,
+                                                     @Param("to") LocalDateTime to);
+
+    @Query(value = """
             SELECT COUNT(*) > 0 FROM appointments a
             WHERE a.doctor_id = :doctorId
               AND a.status IN :activeStatuses
               AND a.start_time < :endTime
               AND a.end_time > :startTime
             """, nativeQuery = true)
-    boolean existsOverlappingDoctorAppointment(@Param("doctorId") Long doctorId,
-                                               @Param("startTime") LocalDateTime startTime,
-                                               @Param("endTime") LocalDateTime endTime,
-                                               @Param("activeStatuses") List<String> activeStatuses);
+    int existsOverlappingDoctorAppointment(@Param("doctorId") Long doctorId,
+                                           @Param("startTime") LocalDateTime startTime,
+                                           @Param("endTime") LocalDateTime endTime,
+                                           @Param("activeStatuses") List<String> activeStatuses);
+
+    @Query(value = """
+            SELECT * FROM appointments a
+            WHERE a.doctor_id = :doctorId
+              AND a.status IN :statuses
+              AND a.start_time >= :from
+            ORDER BY a.start_time ASC
+            """, nativeQuery = true)
+    List<Appointment> findUpcomingByDoctor(@Param("doctorId") Long doctorId,
+                                           @Param("statuses") List<String> statuses,
+                                           @Param("from") LocalDateTime from);
+
+    @Query(value = """
+            SELECT * FROM appointments
+            WHERE doctor_id = :doctorId AND status IN :statuses
+            ORDER BY start_time DESC
+            """, nativeQuery = true)
+    List<Appointment> findByDoctorAndStatuses(@Param("doctorId") Long doctorId,
+                                              @Param("statuses") List<String> statuses);
 
     long countByStatus(AppointmentStatus status);
 

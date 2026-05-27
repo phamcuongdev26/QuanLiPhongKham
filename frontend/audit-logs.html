@@ -56,7 +56,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn-logout" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -138,7 +138,7 @@
   <div class="modal cmp-modal">
     <div class="modal-header">
       <h3 id="cmpTitle">So sánh thay đổi</h3>
-      <button class="modal-close" onclick="closeCmp()">&#x2715;</button>
+      <button class="modal-close" onclick="closeCmp()">&times;</button>
     </div>
     <div class="modal-body">
       <div class="cmp-grid" id="cmpGrid"></div>
@@ -235,7 +235,7 @@
         <td>${newText}</td>
         <td style="text-align:center;">
           ${l.action === 'UPDATE'
-            ? `<button class="btn btn-info btn-sm" onclick="openCmp(${l.id})" title="Xem so sánh">&#128065;</button>`
+            ? `<button class="btn btn-info btn-sm" onclick="openCmp(${l.id})" title="Xem so sánh"></button>`
             : '—'}
         </td>
         <td><span class="action-badge action-${l.action}">${actionLabel(l.action)}</span></td>
@@ -288,11 +288,11 @@
 
     document.getElementById('cmpGrid').innerHTML = `
       <div class="cmp-panel">
-        <div class="cmp-panel-head ${oldHeadCls}">&#10060; Giá trị cũ</div>
+        <div class="cmp-panel-head ${oldHeadCls}">Giá trị cũ</div>
         ${buildPanel(oldObj, 'old')}
       </div>
       <div class="cmp-panel">
-        <div class="cmp-panel-head ${newHeadCls}">&#9989; Giá trị mới</div>
+        <div class="cmp-panel-head ${newHeadCls}">Giá trị mới</div>
         ${buildPanel(newObj, 'new')}
       </div>`;
 
@@ -339,7 +339,7 @@
     const c = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '&#9989;' : '&#10060;'}</span> ${msg}`;
+    t.innerHTML = `<span>${type === 'success' ? '' : ''}</span> ${msg}`;
     c.appendChild(t); setTimeout(() => t.remove(), 3500);
   }
 

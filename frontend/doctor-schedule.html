@@ -30,7 +30,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn-logout" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -42,10 +42,20 @@
       </div>
     </div>
 
+    <!-- Confirmed appointments -->
+    <div style="padding: 28px 28px 0;">
+      <div class="card" style="padding:24px;">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Lịch hẹn đã xác nhận</h3>
+        <div id="confirmedList">
+          <div style="text-align:center;color:#999;font-size:.875rem;padding:20px;">Đang tải...</div>
+        </div>
+      </div>
+    </div>
+
     <div class="schedule-layout">
       <!-- Work Shifts -->
       <div class="card" style="padding:24px;">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128336; Ca làm việc</h3>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Ca làm việc</h3>
         <div id="alertShift" class="alert"></div>
 
         <div class="form-group">
@@ -79,7 +89,7 @@
 
       <!-- Days Off -->
       <div class="card" style="padding:24px;">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#127964; Ngày nghỉ</h3>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Ngày nghỉ</h3>
         <div id="alertDayOff" class="alert"></div>
 
         <div class="form-group">
@@ -118,7 +128,7 @@
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
@@ -230,9 +240,48 @@
     }
   }
 
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmtDT(dt) {
+    const d = new Date(dt);
+    return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  async function loadConfirmed() {
+    const container = document.getElementById('confirmedList');
+    try {
+      const res = await fetch(`${API}/api/doctor/appointments/upcoming`, { headers: authHeaders() });
+      if (!res.ok) { container.innerHTML = ''; return; }
+      const list = await res.json();
+      const confirmed = list.filter(a => a.status === 'CONFIRMED');
+      if (!confirmed.length) {
+        container.innerHTML = '<div style="text-align:center;color:#999;font-size:.875rem;padding:12px;">Chưa có lịch hẹn nào được xác nhận</div>';
+        return;
+      }
+      container.innerHTML = `<table style="width:100%;font-size:.85rem;border-collapse:collapse;">
+        <thead><tr style="background:#fafafa;">
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Thời gian</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Bệnh nhân</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Chuyên khoa</th>
+          <th style="padding:8px 10px;text-align:left;color:var(--text-light);font-weight:600;">Triệu chứng</th>
+        </tr></thead>
+        <tbody>${confirmed.map(a => `
+          <tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:8px 10px;font-weight:600;white-space:nowrap;">${fmtDT(a.startTime)}</td>
+            <td style="padding:8px 10px;">${a.patientName || '-'}</td>
+            <td style="padding:8px 10px;">${a.specialtyName || '-'}</td>
+            <td style="padding:8px 10px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.symptomDescription || '-'}</td>
+          </tr>
+        `).join('')}</tbody>
+      </table>`;
+    } catch {
+      container.innerHTML = '<div style="color:var(--danger);text-align:center;padding:12px;font-size:.875rem;">Không thể tải dữ liệu</div>';
+    }
+  }
+
   const todayStr = new Date().toISOString().split('T')[0];
   document.getElementById('dayOffDate').min = todayStr;
 
+  loadConfirmed();
   loadShifts();
   loadDaysOff();
 </script>

@@ -16,6 +16,7 @@ public class AppointmentResponse {
     private String patientName;
     private Long doctorId;
     private String doctorName;
+    private String patientPhone;
     private Long specialtyId;
     private String specialtyName;
     private LocalDateTime startTime;

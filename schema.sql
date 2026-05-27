@@ -130,14 +130,33 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 -- ── NOTIFICATIONS ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS notifications (
-  id         BIGINT AUTO_INCREMENT PRIMARY KEY,
-  user_id    BIGINT       NOT NULL,
-  type       VARCHAR(50)  NOT NULL,
-  title      VARCHAR(255),
-  body       VARCHAR(2000),
-  is_read    TINYINT(1)   NOT NULL DEFAULT 0,
-  created_at DATETIME,
+  id                 BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id            BIGINT       NOT NULL,
+  type               VARCHAR(50)  NOT NULL,
+  title              VARCHAR(300) NOT NULL,
+  message            VARCHAR(2000),
+  ref_appointment_id BIGINT,
+  is_read            TINYINT(1)   NOT NULL DEFAULT 0,
+  created_at         DATETIME,
+  INDEX idx_notifications_user_created (user_id, created_at),
   CONSTRAINT fk_notif_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── AUDIT LOGS ───────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+  action          VARCHAR(20) NOT NULL COMMENT 'CREATE | UPDATE | DELETE',
+  entity_type     VARCHAR(50) NOT NULL COMMENT 'DOCTOR | SPECIALTY | USER | APPOINTMENT',
+  entity_id       BIGINT,
+  entity_name     VARCHAR(200),
+  admin_username  VARCHAR(100),
+  admin_full_name VARCHAR(200),
+  old_value       TEXT,
+  new_value       TEXT,
+  detail          TEXT,
+  created_at      DATETIME,
+  INDEX idx_audit_logs_created_at (created_at),
+  INDEX idx_audit_logs_entity_action (entity_type, action)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
