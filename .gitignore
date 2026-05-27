@@ -18,6 +18,10 @@ Thumbs.db
 .env
 *.local
 
+# Database dump files are shared separately
+database/*.sql
+*.sql
+
 # Certificates & private keys — không được commit vào repo
 backend/src/main/resources/certs/private.pem
 *.pem
