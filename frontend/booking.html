@@ -41,7 +41,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -51,7 +51,7 @@
       <div class="topbar-right">
         <span class="badge" id="roleBadge"></span>
         <div style="position:relative;" id="notifWrapper">
-          <button class="notif-bell-btn" id="notifBell" onclick="toggleNotifDropdown(event)">&#128276;<span class="notif-badge" id="notifBadge"></span></button>
+          <button class="notif-bell-btn" id="notifBell" onclick="toggleNotifDropdown(event)">Thông báo<span class="notif-badge" id="notifBadge"></span></button>
           <div class="notif-dropdown" id="notifDropdown">
             <div class="notif-dropdown-header">
               <span>Thông báo</span>
@@ -103,7 +103,7 @@
         </div>
 
         <button class="btn btn-primary" id="submitBtn" onclick="submitBooking()" disabled>
-          &#128197; Xác nhận đặt lịch
+          Xác nhận đặt lịch
         </button>
       </div>
     </div>
@@ -148,7 +148,7 @@
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
@@ -242,7 +242,7 @@
       alertEl.textContent = err.message;
       alertEl.className = 'alert alert-error show';
       btn.disabled = false;
-      btn.textContent = '📅 Xác nhận đặt lịch';
+      btn.textContent = 'Xác nhận đặt lịch';
     }
   }
 

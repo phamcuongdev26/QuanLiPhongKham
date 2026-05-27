@@ -46,7 +46,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -57,7 +57,7 @@
         <span class="badge" id="roleBadge"></span>
         <a href="specialties.html" class="btn btn-primary btn-sm">+ Đặt lịch mới</a>
         <div style="position:relative;" id="notifWrapper">
-          <button class="notif-bell-btn" id="notifBell" onclick="toggleNotifDropdown(event)">&#128276;<span class="notif-badge" id="notifBadge"></span></button>
+          <button class="notif-bell-btn" id="notifBell" onclick="toggleNotifDropdown(event)">Thông báo<span class="notif-badge" id="notifBadge"></span></button>
           <div class="notif-dropdown" id="notifDropdown">
             <div class="notif-dropdown-header">
               <span>Thông báo</span>
@@ -85,7 +85,6 @@
 
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box">
-    <div class="confirm-icon">⚠️</div>
     <h3>Hủy lịch hẹn?</h3>
     <p>Bạn có chắc muốn hủy lịch hẹn này không?</p>
     <div class="confirm-actions">
@@ -114,7 +113,7 @@
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
@@ -135,7 +134,7 @@
     const container = document.getElementById('listContainer');
     const filtered = currentFilter === 'ALL' ? list : list.filter(a => a.status === currentFilter);
     if (!filtered.length) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Không có lịch hẹn nào</p></div>`;
+      container.innerHTML = `<div class="empty-state"><p>Không có lịch hẹn nào</p></div>`;
       return;
     }
     container.innerHTML = filtered.map(a => `
@@ -143,9 +142,9 @@
         <div class="appt-info">
           <h4>BS. ${a.doctorName || '-'} &mdash; ${a.specialtyName || '-'}</h4>
           <div class="appt-meta">
-            <span>&#128197; <strong>${fmtDateTime(a.startTime)}</strong></span>
-            ${a.symptomDescription ? `<span>&#128203; ${a.symptomDescription}</span>` : ''}
-            ${a.doctorNote ? `<span>&#9745; Ghi chú BS: ${a.doctorNote}</span>` : ''}
+            <span><strong>${fmtDateTime(a.startTime)}</strong></span>
+            ${a.symptomDescription ? `<span>${a.symptomDescription}</span>` : ''}
+            ${a.doctorNote ? `<span>Ghi chú BS: ${a.doctorNote}</span>` : ''}
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
@@ -176,9 +175,10 @@
   }
   document.getElementById('confirmYes').onclick = async () => {
     if (!pendingCancelId) return;
+    const appointmentId = pendingCancelId;
     closeConfirm();
     try {
-      const res = await fetch(`${API}/api/appointments/${pendingCancelId}`, {
+      const res = await fetch(`${API}/api/appointments/${appointmentId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

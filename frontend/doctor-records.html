@@ -33,7 +33,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -42,7 +42,7 @@
       <h2>Hồ sơ bệnh án</h2>
       <div class="topbar-right">
         <span class="badge" id="roleBadge"></span>
-        <a href="doctor-appointments.html" class="btn btn-outline btn-sm">&#8592; Quay lại</a>
+        <a href="doctor-appointments.html" class="btn btn-outline btn-sm">Quay lại</a>
       </div>
     </div>
 
@@ -53,7 +53,7 @@
     <div class="records-layout">
       <!-- Medical Record -->
       <div class="card" style="padding:24px;">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128203; Hồ sơ bệnh án</h3>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Hồ sơ bệnh án</h3>
         <div id="alertRecord" class="alert"></div>
         <div class="form-group">
           <label>Chẩn đoán</label>
@@ -63,12 +63,12 @@
           <label>Ghi chú lâm sàng</label>
           <textarea id="clinicalNote" rows="5" placeholder="Ghi chú khám lâm sàng, xét nghiệm..."></textarea>
         </div>
-        <button class="btn btn-primary" onclick="saveRecord()">&#128190; Lưu hồ sơ</button>
+        <button class="btn btn-primary" onclick="saveRecord()">Lưu hồ sơ</button>
       </div>
 
       <!-- Prescription -->
       <div class="card" style="padding:24px;">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128138; Đơn thuốc</h3>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Đơn thuốc</h3>
         <div id="alertPrx" class="alert"></div>
         <div class="form-group">
           <label>Ghi chú đơn thuốc</label>
@@ -87,7 +87,7 @@
         <div id="drugRows"></div>
         <button class="btn btn-outline btn-sm" style="margin-bottom:16px;" onclick="addDrug()">+ Thêm thuốc</button>
         <br/>
-        <button class="btn btn-success" onclick="savePrescription()">&#128190; Lưu đơn thuốc</button>
+        <button class="btn btn-success" onclick="savePrescription()">Lưu đơn thuốc</button>
       </div>
     </div>
   </div>
@@ -111,7 +111,7 @@
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
@@ -155,7 +155,7 @@
       <input type="text" placeholder="2 lần/ngày" class="drug-freq" />
       <input type="text" placeholder="7 ngày" class="drug-dur" />
       <input type="text" placeholder="Uống sau ăn" class="drug-inst" />
-      <button class="remove-drug" onclick="this.closest('.drug-row').remove()">&#10005;</button>
+      <button class="remove-drug" onclick="this.closest('.drug-row').remove()">Đóng</button>
     `;
     container.appendChild(row);
   }
@@ -166,13 +166,12 @@
     const alertEl = document.getElementById('alertRecord');
     alertEl.className = 'alert';
     const body = {
-      appointmentId,
       diagnosis: document.getElementById('diagnosis').value.trim() || null,
       clinicalNote: document.getElementById('clinicalNote').value.trim() || null
     };
     try {
-      const res = await fetch(`${API}/api/medical-records`, {
-        method: 'POST', headers: authHeaders(), body: JSON.stringify(body)
+      const res = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/record`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Thất bại');

@@ -164,10 +164,10 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- ============================================================
 
 -- Tất cả tài khoản test dùng password: Admin@123
--- Hash: $2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a
+-- Hash for Admin@123: $2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe
 INSERT IGNORE INTO users (username, full_name, email, password, role, is_active, created_at, updated_at) VALUES
 ('admin', 'Super Admin', 'admin@clinic.com',
- '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a',
+ '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe',
  'ADMIN', 1, NOW(), NOW());
 
 -- SPECIALTIES
@@ -185,11 +185,11 @@ INSERT IGNORE INTO specialties (name, description, is_active, created_at, update
 
 -- DOCTORS (password: Admin@123)
 INSERT IGNORE INTO users (username, full_name, email, password, role, is_active, created_at, updated_at) VALUES
-('bs_minh',   'BS. Nguyễn Văn Minh',  'bs.minh@clinic.com',   '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'DOCTOR', 1, NOW(), NOW()),
-('bs_lan',    'BS. Trần Thị Lan',     'bs.lan@clinic.com',    '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'DOCTOR', 1, NOW(), NOW()),
-('bs_hung',   'BS. Lê Hoàng Hùng',   'bs.hung@clinic.com',   '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'DOCTOR', 1, NOW(), NOW()),
-('bs_thu',    'BS. Phạm Thị Thu',    'bs.thu@clinic.com',    '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'DOCTOR', 1, NOW(), NOW()),
-('bs_duc',    'BS. Hoàng Văn Đức',   'bs.duc@clinic.com',    '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'DOCTOR', 1, NOW(), NOW());
+('bs_minh',   'BS. Nguyễn Văn Minh',  'bs.minh@clinic.com',   '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'DOCTOR', 1, NOW(), NOW()),
+('bs_lan',    'BS. Trần Thị Lan',     'bs.lan@clinic.com',    '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'DOCTOR', 1, NOW(), NOW()),
+('bs_hung',   'BS. Lê Hoàng Hùng',   'bs.hung@clinic.com',   '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'DOCTOR', 1, NOW(), NOW()),
+('bs_thu',    'BS. Phạm Thị Thu',    'bs.thu@clinic.com',    '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'DOCTOR', 1, NOW(), NOW()),
+('bs_duc',    'BS. Hoàng Văn Đức',   'bs.duc@clinic.com',    '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'DOCTOR', 1, NOW(), NOW());
 
 -- DOCTOR PROFILES (linked to specialty IDs 1..5)
 INSERT IGNORE INTO doctor_profiles (user_id, specialty_id, title, bio, consultation_fee, created_at, updated_at)
@@ -231,6 +231,6 @@ JOIN users u ON u.username = d.uname;
 
 -- PATIENTS (password: Admin@123)
 INSERT IGNORE INTO users (username, full_name, email, password, role, is_active, created_at, updated_at) VALUES
-('patient1', 'Nguyễn Thị Hoa',   'hoa.nguyen@gmail.com',    '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'PATIENT', 1, NOW(), NOW()),
-('patient2', 'Trần Minh Tuấn',   'tuan.tran@gmail.com',     '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'PATIENT', 1, NOW(), NOW()),
-('patient3', 'Lê Thị Mai',       'mai.le@gmail.com',        '$2a$10$slYQmyNdgTY18LdlMqhIme5bIk6RlVAFxMpKNMC.5UqSqHKv6bC.a', 'PATIENT', 1, NOW(), NOW());
+('patient1', 'Nguyễn Thị Hoa',   'hoa.nguyen@gmail.com',    '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'PATIENT', 1, NOW(), NOW()),
+('patient2', 'Trần Minh Tuấn',   'tuan.tran@gmail.com',     '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'PATIENT', 1, NOW(), NOW()),
+('patient3', 'Lê Thị Mai',       'mai.le@gmail.com',        '$2a$10$zaA983dRpygK50GZjXzDce7.icrBRe97.7u0SUcwYb9869urOkDHe', 'PATIENT', 1, NOW(), NOW());

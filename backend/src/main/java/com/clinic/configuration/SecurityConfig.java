@@ -57,6 +57,8 @@ public class SecurityConfig {
                                 "/specialties.html", "/doctors.html", "/booking.html",
                                 "/my-appointments.html", "/doctor-appointments.html",
                                 "/doctor-records.html", "/doctor-schedule.html",
+                                "/doctors-manage.html", "/specialties-manage.html",
+                                "/appointments-admin.html", "/audit-logs.html",
                                 "/*.css", "/*.js", "/*.ico", "/*.png", "/*.svg"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET,
@@ -71,8 +73,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAuthority("SCOPE_ADMIN")
                         .requestMatchers("/api/doctor/**").hasAuthority("SCOPE_DOCTOR")
                         .requestMatchers("/api/patient/**").hasAuthority("SCOPE_PATIENT")
-                        .requestMatchers(HttpMethod.PUT, "/api/appointments/*/status").hasAnyAuthority("SCOPE_DOCTOR", "SCOPE_ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/medical-records").hasAuthority("SCOPE_DOCTOR")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

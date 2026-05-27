@@ -30,7 +30,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -45,7 +45,7 @@
     <div class="schedule-layout">
       <!-- Work Shifts -->
       <div class="card" style="padding:24px;">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#128336; Ca làm việc</h3>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Ca làm việc</h3>
         <div id="alertShift" class="alert"></div>
 
         <div class="form-group">
@@ -79,7 +79,7 @@
 
       <!-- Days Off -->
       <div class="card" style="padding:24px;">
-        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">&#127964; Ngày nghỉ</h3>
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:18px;">Ngày nghỉ</h3>
         <div id="alertDayOff" class="alert"></div>
 
         <div class="form-group">
@@ -118,7 +118,7 @@
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }

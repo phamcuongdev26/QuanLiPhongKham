@@ -36,13 +36,13 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
   <div class="main-content">
     <div class="topbar">
-      <h2>&#128203; Lịch sử thay đổi</h2>
+      <h2>Lịch sử thay đổi</h2>
       <div class="topbar-right"><span class="badge" id="roleBadge"></span></div>
     </div>
 
@@ -78,8 +78,8 @@
             </select>
           </div>
           <div class="form-group" style="justify-content:flex-end;flex-direction:row;gap:8px;">
-            <button class="btn btn-primary btn-sm" onclick="resetAndLoad()">&#128269; Tìm kiếm</button>
-            <button class="btn btn-outline btn-sm" onclick="resetFilters()">&#8635; Làm mới</button>
+            <button class="btn btn-primary btn-sm" onclick="resetAndLoad()">Tìm kiếm</button>
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">Làm mới</button>
           </div>
         </div>
 
@@ -102,7 +102,6 @@
           </table>
         </div>
         <div id="emptyMsg" class="empty-state" style="display:none;">
-          <div class="empty-icon">&#128203;</div>
           <p>Chưa có lịch sử thay đổi</p>
         </div>
         <div class="pagination-wrap">
@@ -119,7 +118,7 @@
   <div class="modal" style="max-width:700px;">
     <div class="modal-header">
       <h3>So sánh thay đổi</h3>
-      <button class="modal-close" onclick="closeDiff()">&#x2715;</button>
+      <button class="modal-close" onclick="closeDiff()">Đóng</button>
     </div>
     <div class="modal-body">
       <p id="diffDetail" style="margin-bottom:12px;color:#666;font-size:.85rem;"></p>
@@ -163,7 +162,7 @@
     const c = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '&#9989;' : '&#10060;'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     c.appendChild(t); setTimeout(() => t.remove(), 3500);
   }
 
@@ -227,7 +226,7 @@
         </td>
         <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.82rem;">${l.detail || '—'}</td>
         <td style="white-space:nowrap;font-size:.82rem;">${fmtDateTime(l.createdAt)}</td>
-        <td>${(l.oldValue || l.newValue) ? `<button class="btn btn-info btn-sm" onclick="showDiff(${l.id})">&#128065;</button>` : '—'}</td>
+        <td>${(l.oldValue || l.newValue) ? `<button class="btn btn-info btn-sm" onclick="showDiff(${l.id})">Xem</button>` : '—'}</td>
       </tr>
     `).join('');
   }
@@ -245,8 +244,8 @@
     document.getElementById('diffDetail').textContent =
       `${actionLabel(log.action)} • ${entityLabel(log.entityType)} • ${log.entityName || ''} • ${fmtDateTime(log.createdAt)}`;
     let html = '';
-    if (log.oldValue) html += `<div class="diff-old"><div class="diff-label">&#10060; Giá trị cũ</div><pre class="json-pre">${formatJson(log.oldValue)}</pre></div>`;
-    if (log.newValue) html += `<div class="diff-new"><div class="diff-label">&#9989; Giá trị mới</div><pre class="json-pre">${formatJson(log.newValue)}</pre></div>`;
+    if (log.oldValue) html += `<div class="diff-old"><div class="diff-label">Giá trị cũ</div><pre class="json-pre">${formatJson(log.oldValue)}</pre></div>`;
+    if (log.newValue) html += `<div class="diff-new"><div class="diff-label">Giá trị mới</div><pre class="json-pre">${formatJson(log.newValue)}</pre></div>`;
     if (!html) html = '<p>Không có dữ liệu so sánh</p>';
     document.getElementById('diffContent').innerHTML = html;
     document.getElementById('diffModal').classList.add('open');

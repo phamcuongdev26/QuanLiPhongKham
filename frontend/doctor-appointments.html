@@ -33,7 +33,7 @@
     <nav id="sidebarNav"></nav>
     <div class="sidebar-footer">
       <div class="user-info">Xin chào, <strong id="sidebarUsername"></strong></div>
-      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">&#x2192; Đăng xuất</button>
+      <button class="btn btn-outline btn-sm btn-block" onclick="logout()">Đăng xuất</button>
     </div>
   </aside>
 
@@ -62,7 +62,7 @@
   <div class="modal">
     <div class="modal-header">
       <h3 id="modalTitle">Cập nhật lịch hẹn</h3>
-      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+      <button class="modal-close" onclick="closeModal()">Đóng</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -103,7 +103,7 @@
     const tc = document.getElementById('toastContainer');
     const t = document.createElement('div');
     t.className = `toast${type === 'error' ? ' error' : ''}`;
-    t.innerHTML = `<span>${type === 'success' ? '✅' : '❌'}</span> ${msg}`;
+    t.innerHTML = `${msg}`;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
@@ -147,8 +147,8 @@
     const status = document.getElementById('statusSelect').value;
     const doctorNote = document.getElementById('doctorNote').value.trim() || null;
     try {
-      const res = await fetch(`${API}/api/appointments/${currentApptId}/status`, {
-        method: 'PUT',
+      const res = await fetch(`${API}/api/doctor/appointments/${currentApptId}/status`, {
+        method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify({ status, doctorNote })
       });
@@ -174,7 +174,7 @@
       if (res.status === 401) { logout(); return; }
       const list = await res.json();
       if (!list.length) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Không có lịch hẹn trong ngày này</p></div>`;
+        container.innerHTML = `<div class="empty-state"><p>Không có lịch hẹn trong ngày này</p></div>`;
         return;
       }
       container.innerHTML = `<div class="card">

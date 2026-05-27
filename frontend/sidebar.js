@@ -9,24 +9,24 @@
 
   const MENUS = {
     ADMIN: [
-      { href: 'dashboard.html',          icon: '&#9632;',   label: 'Dashboard' },
-      { href: 'users.html',              icon: '&#128100;', label: 'Quản lý Khách hàng' },
-      { href: 'doctors-manage.html',     icon: '&#129657;', label: 'Bác sĩ' },
-      { href: 'categories.html',         icon: '&#127991;', label: 'Chuyên khoa' },
-      { href: 'appointments-admin.html', icon: '&#128197;', label: 'Lịch hẹn' },
-      { href: 'audit-logs.html',         icon: '&#128203;', label: 'Lịch sử thay đổi' },
-      { href: 'profile.html',            icon: '&#128196;', label: 'Hồ sơ' },
+      { href: 'dashboard.html',          label: 'Dashboard' },
+      { href: 'users.html',              label: 'Người dùng' },
+      { href: 'doctors-manage.html',     label: 'Bác sĩ' },
+      { href: 'specialties-manage.html', label: 'Chuyên khoa' },
+      { href: 'appointments-admin.html', label: 'Lịch hẹn' },
+      { href: 'audit-logs.html',         label: 'Lịch sử thay đổi' },
+      { href: 'profile.html',            label: 'Hồ sơ' },
     ],
     PATIENT: [
-      { href: 'specialties.html',     icon: '&#127973;', label: 'Đặt lịch khám' },
-      { href: 'my-appointments.html', icon: '&#128197;', label: 'Lịch của tôi' },
-      { href: 'profile.html',         icon: '&#128100;', label: 'Hồ sơ' },
+      { href: 'specialties.html',     label: 'Đặt lịch khám' },
+      { href: 'my-appointments.html', label: 'Lịch của tôi' },
+      { href: 'profile.html',         label: 'Hồ sơ' },
     ],
     DOCTOR: [
-      { href: 'doctor-appointments.html', icon: '&#128197;', label: 'Lịch hẹn' },
-      { href: 'doctor-records.html',      icon: '&#128203;', label: 'Hồ sơ bệnh án' },
-      { href: 'doctor-schedule.html',     icon: '&#128336;', label: 'Lịch làm việc' },
-      { href: 'profile.html',             icon: '&#128100;', label: 'Hồ sơ' },
+      { href: 'doctor-appointments.html', label: 'Lịch hẹn' },
+      { href: 'doctor-records.html',      label: 'Hồ sơ bệnh án' },
+      { href: 'doctor-schedule.html',     label: 'Lịch làm việc' },
+      { href: 'profile.html',             label: 'Hồ sơ' },
     ],
   };
 
@@ -34,7 +34,7 @@
   if (nav) {
     const items = MENUS[role] || [];
     nav.innerHTML = items.map(item =>
-      `<a href="${item.href}"${page === item.href ? ' class="active"' : ''}><span class="icon">${item.icon}</span> ${item.label}</a>`
+      `<a href="${item.href}"${page === item.href ? ' class="active"' : ''}>${item.label}</a>`
     ).join('');
   }
 
