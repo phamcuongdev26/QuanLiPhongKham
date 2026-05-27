@@ -31,7 +31,7 @@
 
   <div class="main-content">
     <div class="topbar">
-      <h2>&#127991; Quản lý Chuyên khoa</h2>
+      <h2>Quản lý Chuyên khoa</h2>
       <div class="topbar-right">
         <span class="badge" id="roleBadge"></span>
         <button class="btn btn-primary btn-sm" onclick="openCreateModal()">+ Thêm chuyên khoa</button>
@@ -41,13 +41,13 @@
     <div class="page-body">
       <div class="card">
         <div class="table-controls">
-          <input type="text" class="search-input" id="searchInput" placeholder="&#128269; Tìm chuyên khoa..." oninput="filterSpecs()" />
+          <input type="text" class="search-input" id="searchInput" placeholder="Tìm chuyên khoa..." oninput="filterSpecs()" />
         </div>
         <div id="specGrid" class="spec-grid">
           <div style="grid-column:1/-1;text-align:center;padding:48px;color:#999;">Đang tải...</div>
         </div>
         <div id="emptyMsg" class="empty-state" style="display:none;">
-          <div class="empty-icon">&#127991;</div>
+          <div class="empty-icon"></div>
           <p>Không tìm thấy chuyên khoa nào</p>
         </div>
       </div>
@@ -176,7 +176,7 @@
     empty.style.display = 'none';
     grid.innerHTML = list.map(s => `
       <div class="spec-card" style="${!s.isActive ? 'opacity:.6;' : ''}">
-        <div class="spec-name">&#127973; ${s.name}</div>
+        <div class="spec-name">${s.name}</div>
         <div class="spec-desc">${s.description || '<em style="color:#ccc;">Chưa có mô tả</em>'}</div>
         <div class="spec-footer">
           <span class="badge ${s.isActive ? 'badge-active' : 'badge-inactive'}">${s.isActive ? 'Hoạt động' : 'Đã xóa'}</span>
