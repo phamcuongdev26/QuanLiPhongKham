@@ -53,7 +53,6 @@ public class MedicalServiceImpl implements MedicalService {
         return appointment;
     }
 
-
     @Override
     @Transactional
     public void upsertMedicalRecord(String doctorUsername, Long appointmentId, UpsertMedicalRecordRequest request) {
@@ -109,10 +108,7 @@ public class MedicalServiceImpl implements MedicalService {
     @Transactional(readOnly = true)
     public List<MedicalRecordResponse> getDoctorRecords(String doctorUsername) {
         User doc = doctor(doctorUsername);
-        List<Appointment> appointments = appointmentRepository.findByDoctorAndStatuses(
-                doc.getId(),
-                List.of(AppointmentStatus.CONFIRMED.name(), AppointmentStatus.COMPLETED.name())
-        );
+        List<Appointment> appointments = appointmentRepository.findByDoctor_IdOrderByStartTimeDesc(doc.getId());
         return appointments.stream().map(a -> {
             MedicalRecord rec = medicalRecordRepository.findById(a.getId()).orElse(null);
             return toResponseFromAppointment(a, rec);

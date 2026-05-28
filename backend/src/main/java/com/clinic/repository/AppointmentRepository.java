@@ -13,6 +13,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByPatient_IdOrderByStartTimeDesc(Long patientId);
 
+    List<Appointment> findByDoctor_IdOrderByStartTimeDesc(Long doctorId);
+
     List<Appointment> findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(Long doctorId, LocalDateTime from, LocalDateTime to);
 
     @Query(value = """

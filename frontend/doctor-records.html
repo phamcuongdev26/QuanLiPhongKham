@@ -98,8 +98,6 @@
           </div>
           <div id="drugRows"></div>
           <button class="btn btn-outline btn-sm" style="margin-bottom:16px;" onclick="addDrug()">+ Thêm thuốc</button>
-          <br/>
-          <button class="btn btn-success" onclick="savePrescription()">Lưu đơn thuốc</button>
         </div>
       </div>
     </div>
@@ -212,7 +210,7 @@
       // Chỉ khóa nút lưu theo trạng thái — form luôn hiển thị để xem.
       const canEdit = appt.status !== 'COMPLETED' && appt.status !== 'CANCELED' && appt.status !== 'REJECTED';
       if (!canEdit) {
-        document.querySelectorAll('#detailView .btn-primary, #detailView .btn-success').forEach(btn => btn.disabled = true);
+        document.querySelectorAll('#detailView .btn-primary').forEach(btn => btn.disabled = true);
         if (appt.status === 'COMPLETED') {
           document.getElementById('alertRecord').textContent = 'Hồ sơ đã hoàn thành.';
           document.getElementById('alertRecord').className = 'alert alert-success show';
@@ -260,18 +258,30 @@
   }
 
   async function saveRecord() {
-    const alertEl = document.getElementById('alertRecord');
-    alertEl.className = 'alert';
-    const body = {
+    const recordAlert = document.getElementById('alertRecord');
+    const prescriptionAlert = document.getElementById('alertPrx');
+    recordAlert.className = 'alert';
+    prescriptionAlert.className = 'alert';
+
+    const recordBody = {
       diagnosis: document.getElementById('diagnosis').value.trim() || null,
       clinicalNote: document.getElementById('clinicalNote').value.trim() || null
     };
+
     try {
-      const res = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/record`, {
-        method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
+      const prescriptionBody = buildPrescriptionBody();
+
+      const recordRes = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/record`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(recordBody)
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Thất bại');
+      const recordData = await recordRes.json();
+      if (!recordRes.ok) throw new Error(recordData.message || 'Lưu hồ sơ thất bại');
+
+      const prescriptionRes = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/prescription`, {
+        method: 'PUT', headers: authHeaders(), body: JSON.stringify(prescriptionBody)
+      });
+      const prescriptionData = await prescriptionRes.json();
+      if (!prescriptionRes.ok) throw new Error(prescriptionData.message || 'Lưu đơn thuốc thất bại');
 
       // Tự động chuyển trạng thái sang COMPLETED
       await fetch(`${API}/api/doctor/appointments/${appointmentId}/status`, {
@@ -280,43 +290,36 @@
       });
 
       toast('Lưu hồ sơ thành công — lịch hẹn đã hoàn thành');
-      document.querySelectorAll('#detailView .btn-primary, #detailView .btn-success').forEach(btn => btn.disabled = true);
-      alertEl.textContent = 'Hồ sơ đã hoàn thành.';
-      alertEl.className = 'alert alert-success show';
+      document.querySelectorAll('#detailView .btn-primary').forEach(btn => btn.disabled = true);
+      recordAlert.textContent = 'Hồ sơ đã hoàn thành.';
+      recordAlert.className = 'alert alert-success show';
     } catch (err) {
-      alertEl.textContent = err.message;
-      alertEl.className = 'alert alert-error show';
+      recordAlert.textContent = err.message;
+      recordAlert.className = 'alert alert-error show';
     }
   }
 
-  async function savePrescription() {
-    const alertEl = document.getElementById('alertPrx');
-    alertEl.className = 'alert';
+  function buildPrescriptionBody() {
     const rows = document.querySelectorAll('.drug-row');
     const items = [];
     for (const row of rows) {
       const name = row.querySelector('.drug-name').value.trim();
-      if (!name) { alertEl.textContent = 'Tên thuốc không được để trống'; alertEl.className = 'alert alert-error show'; return; }
+      const dosage = row.querySelector('.drug-dosage').value.trim();
+      const frequency = row.querySelector('.drug-freq').value.trim();
+      const duration = row.querySelector('.drug-dur').value.trim();
+      const instruction = row.querySelector('.drug-inst').value.trim();
+      const hasAnyValue = name || dosage || frequency || duration || instruction;
+      if (!hasAnyValue) continue;
+      if (!name) throw new Error('Tên thuốc không được để trống');
       items.push({
         drugName: name,
-        dosage: row.querySelector('.drug-dosage').value.trim() || null,
-        frequency: row.querySelector('.drug-freq').value.trim() || null,
-        duration: row.querySelector('.drug-dur').value.trim() || null,
-        instruction: row.querySelector('.drug-inst').value.trim() || null
+        dosage: dosage || null,
+        frequency: frequency || null,
+        duration: duration || null,
+        instruction: instruction || null
       });
     }
-    const body = { note: document.getElementById('prxNote').value.trim() || null, items };
-    try {
-      const res = await fetch(`${API}/api/doctor/medical/appointments/${appointmentId}/prescription`, {
-        method: 'PUT', headers: authHeaders(), body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Thất bại');
-      toast('Lưu đơn thuốc thành công');
-    } catch (err) {
-      alertEl.textContent = err.message;
-      alertEl.className = 'alert alert-error show';
-    }
+    return { note: document.getElementById('prxNote').value.trim() || null, items };
   }
 </script>
 <script src="sidebar.js"></script>

@@ -37,6 +37,21 @@
       color: var(--text-light); transition: all .15s;
     }
     .filter-btn.active, .filter-btn:hover { border-color: var(--primary); color: var(--primary); background: #fef9f8; }
+    .record-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1000;
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .record-overlay.open { display: flex; }
+    .record-box {
+      background: var(--white); width: min(560px, 100%); border-radius: 12px;
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .record-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+    .record-header h3 { font-size: 1rem; margin: 0; }
+    .record-body { padding: 20px 22px; display: grid; gap: 14px; }
+    .record-row label { display: block; font-size: .78rem; font-weight: 700; color: var(--text-light); margin-bottom: 4px; }
+    .record-row div { font-size: .9rem; color: var(--text); line-height: 1.5; white-space: pre-wrap; }
+    .record-footer { padding: 14px 22px; border-top: 1px solid var(--border); text-align: right; }
   </style>
 </head>
 <body>
@@ -95,6 +110,19 @@
   </div>
 </div>
 
+<div class="record-overlay" id="recordOverlay">
+  <div class="record-box">
+    <div class="record-header">
+      <h3>Hồ sơ bệnh án</h3>
+      <button class="modal-close" onclick="closeRecordModal()">&times;</button>
+    </div>
+    <div class="record-body" id="recordBody"></div>
+    <div class="record-footer">
+      <button class="btn btn-outline" onclick="closeRecordModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
@@ -102,12 +130,14 @@
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
   const username = localStorage.getItem('username');
+  const userId = localStorage.getItem('userId');
 
   if (!token || role !== 'PATIENT') window.location.href = 'login.html';
 
   function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
   let allAppointments = [];
+  let historyByAppointmentId = {};
   let currentFilter = 'ALL';
 
   function toast(msg, type = 'success') {
@@ -158,12 +188,55 @@
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
           <span class="status-badge status-${escHtml(a.status)}">${STATUS_LABEL[a.status] || escHtml(a.status)}</span>
+          <button class="btn btn-info btn-sm" onclick="openRecordModal(${a.id})">Xem hồ sơ</button>
           ${(a.status === 'PENDING' || a.status === 'CONFIRMED') ? `
             <button class="btn btn-danger btn-sm" onclick="confirmCancel(${a.id})">Hủy lịch</button>
           ` : ''}
         </div>
       </div>
     `).join('');
+  }
+
+  function openRecordModal(appointmentId) {
+    const appointment = allAppointments.find(a => a.id === appointmentId);
+    const record = historyByAppointmentId[appointmentId] || appointment;
+    document.getElementById('recordBody').innerHTML = `
+      <div class="record-row">
+        <label>Bác sĩ</label>
+        <div>${escHtml(record.doctorName) || '-'}</div>
+      </div>
+      <div class="record-row">
+        <label>Chuyên khoa</label>
+        <div>${escHtml(record.specialtyName) || '-'}</div>
+      </div>
+      <div class="record-row">
+        <label>Giờ khám</label>
+        <div>${fmtDateTime(record.startTime)}</div>
+      </div>
+      <div class="record-row">
+        <label>Triệu chứng</label>
+        <div>${escHtml(record.symptomDescription) || '-'}</div>
+      </div>
+      <div class="record-row">
+        <label>Chẩn đoán</label>
+        <div>${escHtml(record.diagnosis) || 'Chưa có chẩn đoán'}</div>
+      </div>
+      <div class="record-row">
+        <label>Ghi chú lâm sàng</label>
+        <div>${escHtml(record.clinicalNote) || 'Chưa có ghi chú'}</div>
+      </div>
+      ${record.doctorNote ? `
+        <div class="record-row">
+          <label>Ghi chú bác sĩ</label>
+          <div>${escHtml(record.doctorNote)}</div>
+        </div>
+      ` : ''}
+    `;
+    document.getElementById('recordOverlay').classList.add('open');
+  }
+
+  function closeRecordModal() {
+    document.getElementById('recordOverlay').classList.remove('open');
   }
 
   function setFilter(filter, btn) {
@@ -201,11 +274,17 @@
 
   async function loadAppointments() {
     try {
-      const res = await fetch(`${API}/api/appointments`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      const [res, historyRes] = await Promise.all([
+        fetch(`${API}/api/appointments`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`${API}/api/patients/${userId}/history`, { headers: { 'Authorization': `Bearer ${token}` } })
+      ]);
       if (res.status === 401) { logout(); return; }
+      if (!res.ok) throw new Error('Không thể tải lịch hẹn');
       allAppointments = await res.json();
+      if (historyRes.ok) {
+        const history = await historyRes.json();
+        historyByAppointmentId = Object.fromEntries(history.map(r => [r.appointmentId, r]));
+      }
       render(allAppointments);
     } catch (err) {
       document.getElementById('listContainer').innerHTML = '<div style="color:var(--danger);text-align:center;padding:40px;">Không thể tải dữ liệu</div>';
