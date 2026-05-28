@@ -41,19 +41,18 @@ public class PatientHistoryController {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        // Bác sĩ chỉ được xem lịch sử bệnh nhân từng khám với mình
         if (isDoctor) {
             boolean hasRelation = appointmentRepository
-                    .findByPatient_IdOrderByStartTimeDesc(id)
+                    .findByPatientId(id)
                     .stream()
                     .anyMatch(a -> a.getDoctor().getId().equals(caller.getId()));
             if (!hasRelation) throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        List<Appointment> appointments = appointmentRepository.findByPatient_IdOrderByStartTimeDesc(id);
+        List<Appointment> appointments = appointmentRepository.findByPatientId(id);
 
         List<Long> apptIds = appointments.stream().map(Appointment::getId).toList();
-        Map<Long, MedicalRecord> recordMap = medicalRecordRepository.findByIdIn(apptIds).stream()
+        Map<Long, MedicalRecord> recordMap = medicalRecordRepository.findByAppointmentIds(apptIds).stream()
                 .collect(Collectors.toMap(r -> r.getAppointment().getId(), r -> r));
 
         List<PatientHistoryResponse> result = appointments.stream().map(a -> {

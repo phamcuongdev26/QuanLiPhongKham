@@ -31,13 +31,13 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         }
         int minutes = slotMinutes <= 0 ? 30 : slotMinutes;
 
-        if (doctorDayOffRepository.existsByDoctor_IdAndDayOff(doctorId, date)) {
+        if (doctorDayOffRepository.existsByDoctorIdAndDayOff(doctorId, date)) {
             return List.of();
         }
 
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         List<DoctorWorkShift> workingShifts = doctorWorkShiftRepository
-                .findByDoctor_IdAndDayOfWeekAndIsActiveTrueOrderByStartTimeAsc(doctorId, dayOfWeek);
+                .findActiveByDoctorIdAndDayOfWeek(doctorId, dayOfWeek.name());
         if (workingShifts.isEmpty()) {
             return List.of();
         }

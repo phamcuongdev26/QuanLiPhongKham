@@ -37,7 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public List<NotificationResponse> listForUser(String username) {
         User user = loadUser(username);
-        return notificationRepository.findByUser_IdOrderByCreatedAtDesc(user.getId()).stream()
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -45,7 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public long countUnread(String username) {
         User user = loadUser(username);
-        return notificationRepository.countByUser_IdAndIsReadFalse(user.getId());
+        return notificationRepository.countUnreadByUserId(user.getId());
     }
 
     @Override

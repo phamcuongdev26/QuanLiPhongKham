@@ -59,7 +59,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     public List<DoctorShiftResponse> listShifts(String doctorUsername) {
         User doctor = doctor(doctorUsername);
-        return doctorWorkShiftRepository.findByDoctor_IdAndIsActiveTrue(doctor.getId()).stream()
+        return doctorWorkShiftRepository.findActiveByDoctorId(doctor.getId()).stream()
                 .map(s -> DoctorShiftResponse.builder()
                         .id(s.getId())
                         .dayOfWeek(s.getDayOfWeek())
@@ -74,8 +74,8 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Transactional
     public DoctorDayOffResponse addDayOff(String doctorUsername, CreateDayOffRequest request) {
         User doctor = doctor(doctorUsername);
-        if (doctorDayOffRepository.existsByDoctor_IdAndDayOff(doctor.getId(), request.getDayOff())) {
-            return doctorDayOffRepository.findByDoctor_IdAndDayOff(doctor.getId(), request.getDayOff())
+        if (doctorDayOffRepository.existsByDoctorIdAndDayOff(doctor.getId(), request.getDayOff())) {
+            return doctorDayOffRepository.findByDoctorIdAndDayOff(doctor.getId(), request.getDayOff())
                     .map(d -> DoctorDayOffResponse.builder().id(d.getId()).dayOff(d.getDayOff()).reason(d.getReason()).build())
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR));
         }
@@ -95,7 +95,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     @Override
     public List<DoctorDayOffResponse> listDaysOff(String doctorUsername) {
         User doctor = doctor(doctorUsername);
-        return doctorDayOffRepository.findByDoctor_Id(doctor.getId()).stream()
+        return doctorDayOffRepository.findByDoctorId(doctor.getId()).stream()
                 .map(d -> DoctorDayOffResponse.builder().id(d.getId()).dayOff(d.getDayOff()).reason(d.getReason()).build())
                 .toList();
     }

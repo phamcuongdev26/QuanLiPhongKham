@@ -95,7 +95,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         LocalDate appointmentDate = request.getStartTime().toLocalDate();
-        if (doctorDayOffRepository.existsByDoctor_IdAndDayOff(doctor.getId(), appointmentDate)) {
+        if (doctorDayOffRepository.existsByDoctorIdAndDayOff(doctor.getId(), appointmentDate)) {
             throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);
         }
 
@@ -143,7 +143,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public List<AppointmentResponse> listForPatient(String patientUsername) {
         User patient = loadByUsername(patientUsername);
-        return appointmentRepository.findByPatient_IdOrderByStartTimeDesc(patient.getId()).stream()
+        return appointmentRepository.findByPatientId(patient.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -191,7 +191,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         LocalDate target = date == null ? LocalDate.now() : date;
         LocalDateTime from = target.atStartOfDay();
         LocalDateTime to = target.atTime(LocalTime.MAX);
-        return appointmentRepository.findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(doctor.getId(), from, to).stream()
+        return appointmentRepository.findByDoctorIdAndStartTimeBetween(doctor.getId(), from, to).stream()
                 .map(this::toResponse)
                 .toList();
     }

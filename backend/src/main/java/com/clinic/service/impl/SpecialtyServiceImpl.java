@@ -30,7 +30,7 @@ public class SpecialtyServiceImpl implements SpecialtyService {
 
     @Override
     public List<SpecialtyResponse> listActive() {
-        return specialtyRepository.findByIsActiveTrueOrderByNameAsc().stream()
+        return specialtyRepository.findActiveOrderByName().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -49,7 +49,7 @@ public class SpecialtyServiceImpl implements SpecialtyService {
 
     @Override
     public SpecialtyResponse create(CreateSpecialtyRequest request) {
-        if (specialtyRepository.findByNameIgnoreCase(request.getName()).isPresent()) {
+        if (specialtyRepository.findByName(request.getName()).isPresent()) {
             throw new AppException(ErrorCode.SPECIALTY_ALREADY_EXISTS);
         }
         Specialty specialty = Specialty.builder()

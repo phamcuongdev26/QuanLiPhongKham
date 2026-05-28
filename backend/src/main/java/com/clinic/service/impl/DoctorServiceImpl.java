@@ -81,10 +81,10 @@ public class DoctorServiceImpl implements DoctorService {
 
     @Override
     public DoctorSummaryResponse createDoctor(AdminCreateDoctorRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.usernameExists(request.getUsername())) {
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
         }
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.emailExists(request.getEmail())) {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 

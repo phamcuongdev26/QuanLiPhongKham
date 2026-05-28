@@ -1,21 +1,43 @@
 package com.clinic.repository;
 
-import com.clinic.constant.AppointmentStatus;
 import com.clinic.entity.Appointment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    List<Appointment> findByPatient_IdOrderByStartTimeDesc(Long patientId);
+    interface DashboardStatsProjection {
+        long getTotalAppointments();
+        long getPendingAppointments();
+        long getConfirmedAppointments();
+        long getCompletedAppointments();
+        long getTotalDoctors();
+        long getTotalPatients();
+        long getRevenue();
+    }
 
-    List<Appointment> findByDoctor_IdOrderByStartTimeDesc(Long doctorId);
+    interface BusiestDoctorProjection {
+        Long getId();
+        String getFullName();
+        String getEmail();
+        String getSpecialtyName();
+    }
 
-    List<Appointment> findByDoctor_IdAndStartTimeBetweenOrderByStartTimeAsc(Long doctorId, LocalDateTime from, LocalDateTime to);
+    @Query(value = "SELECT * FROM appointments WHERE patient_id = :patientId ORDER BY start_time DESC", nativeQuery = true)
+    List<Appointment> findByPatientId(@Param("patientId") Long patientId);
+
+    @Query(value = "SELECT * FROM appointments WHERE doctor_id = :doctorId ORDER BY start_time DESC", nativeQuery = true)
+    List<Appointment> findByDoctorId(@Param("doctorId") Long doctorId);
+
+    @Query(value = "SELECT * FROM appointments WHERE doctor_id = :doctorId AND start_time BETWEEN :from AND :to ORDER BY start_time ASC", nativeQuery = true)
+    List<Appointment> findByDoctorIdAndStartTimeBetween(@Param("doctorId") Long doctorId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query(value = """
             SELECT * FROM appointments
@@ -59,22 +81,37 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findByDoctorAndStatuses(@Param("doctorId") Long doctorId,
                                               @Param("statuses") List<String> statuses);
 
-    long countByStatus(AppointmentStatus status);
+    @Query(value = """
+            SELECT
+                (SELECT COUNT(*) FROM appointments)                                                        AS total_appointments,
+                (SELECT COUNT(*) FROM appointments WHERE status = 'PENDING')                              AS pending_appointments,
+                (SELECT COUNT(*) FROM appointments WHERE status = 'CONFIRMED')                            AS confirmed_appointments,
+                (SELECT COUNT(*) FROM appointments WHERE status = 'COMPLETED')                            AS completed_appointments,
+                (SELECT COUNT(*) FROM users WHERE role = 'DOCTOR')                                        AS total_doctors,
+                (SELECT COUNT(*) FROM users WHERE role = 'PATIENT')                                       AS total_patients,
+                (SELECT COALESCE(SUM(dp.consultation_fee), 0)
+                 FROM appointments a JOIN doctor_profiles dp ON dp.user_id = a.doctor_id
+                 WHERE a.status = 'COMPLETED')                                                            AS revenue
+            """, nativeQuery = true)
+    DashboardStatsProjection findDashboardStats();
 
     @Query(value = """
-            SELECT COALESCE(SUM(dp.consultation_fee), 0)
+            SELECT u.id, u.full_name AS fullName, u.email, s.name AS specialtyName
             FROM appointments a
+            JOIN users u ON u.id = a.doctor_id
             JOIN doctor_profiles dp ON dp.user_id = a.doctor_id
-            WHERE a.status = :status
-            """, nativeQuery = true)
-    long sumRevenueByCompletedStatus(@Param("status") String status);
-
-    @Query(value = """
-            SELECT a.doctor_id
-            FROM appointments a
-            WHERE a.status = :status
-            GROUP BY a.doctor_id
+            LEFT JOIN specialties s ON s.id = dp.specialty_id
+            WHERE a.status = 'COMPLETED'
+            GROUP BY u.id, u.full_name, u.email, s.name
             ORDER BY COUNT(a.id) DESC
+            LIMIT 1
             """, nativeQuery = true)
-    List<Long> findDoctorIdsByCompletedCountDesc(@Param("status") String status);
+    Optional<BusiestDoctorProjection> findBusiestDoctor();
+
+    @Query(value = "SELECT a FROM Appointment a " +
+                   "JOIN FETCH a.patient " +
+                   "JOIN FETCH a.doctor " +
+                   "LEFT JOIN FETCH a.specialty",
+           countQuery = "SELECT COUNT(a) FROM Appointment a")
+    Page<Appointment> findAllWithDetails(Pageable pageable);
 }

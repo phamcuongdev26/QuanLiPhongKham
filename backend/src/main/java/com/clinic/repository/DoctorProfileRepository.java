@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DoctorProfileRepository extends JpaRepository<DoctorProfile, Long> {
-    List<DoctorProfile> findBySpecialty_Id(Long specialtyId);
+    @Query(value = "SELECT * FROM doctor_profiles WHERE specialty_id = :specialtyId", nativeQuery = true)
+    List<DoctorProfile> findBySpecialtyId(@Param("specialtyId") Long specialtyId);
 
     interface DoctorSummaryProjection {
         Long getId();

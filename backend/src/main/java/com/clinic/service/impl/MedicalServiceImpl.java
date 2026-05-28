@@ -108,7 +108,7 @@ public class MedicalServiceImpl implements MedicalService {
     @Transactional(readOnly = true)
     public List<MedicalRecordResponse> getDoctorRecords(String doctorUsername) {
         User doc = doctor(doctorUsername);
-        List<Appointment> appointments = appointmentRepository.findByDoctor_IdOrderByStartTimeDesc(doc.getId());
+        List<Appointment> appointments = appointmentRepository.findByDoctorId(doc.getId());
         return appointments.stream().map(a -> {
             MedicalRecord rec = medicalRecordRepository.findById(a.getId()).orElse(null);
             return toResponseFromAppointment(a, rec);
@@ -129,7 +129,7 @@ public class MedicalServiceImpl implements MedicalService {
     }
 
     private MedicalRecordResponse toResponseFromAppointment(Appointment a, MedicalRecord rec) {
-        Prescription prx = prescriptionRepository.findByAppointment_Id(a.getId()).orElse(null);
+        Prescription prx = prescriptionRepository.findByAppointmentId(a.getId()).orElse(null);
         PrescriptionResponse prxResponse = null;
         if (prx != null) {
             List<PrescriptionItemResponse> items = prx.getItems().stream()

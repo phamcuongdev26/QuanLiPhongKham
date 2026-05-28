@@ -28,7 +28,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
 
-    @Value("${app.jwt.expiration-hours:24}")
+    @Value("${app.jwt.expiration-hours}")
     private long expirationHours;
 
     private String generateToken(User user) {
@@ -43,9 +43,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByUsername(request.getUsername()))
+        if (userRepository.usernameExists(request.getUsername()))
             throw new AppException(ErrorCode.USERNAME_ALREADY_EXISTS);
-        if (userRepository.existsByEmail(request.getEmail()))
+        if (userRepository.emailExists(request.getEmail()))
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
 
         User user = User.builder()
@@ -74,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository
-                .findByUsernameOrEmail(request.getUsernameOrEmail(), request.getUsernameOrEmail())
+                .findByLogin(request.getUsernameOrEmail(), request.getUsernameOrEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         if (!user.isActive())

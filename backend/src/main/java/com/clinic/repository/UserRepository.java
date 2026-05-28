@@ -16,21 +16,35 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    @Query(value = "SELECT * FROM users WHERE username = :username LIMIT 1", nativeQuery = true)
     Optional<User> findByUsername(String username);
 
+    @Query(value = "SELECT * FROM users WHERE email = :email LIMIT 1", nativeQuery = true)
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByUsernameOrEmail(String username, String email);
+    @Query(value = """
+            SELECT *
+            FROM users
+            WHERE username = :username OR email = :email
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<User> findByLogin(@Param("username") String username,
+                               @Param("email") String email);
 
-    boolean existsByUsername(String username);
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM users WHERE username = :username)", nativeQuery = true)
+    boolean usernameExists(@Param("username") String username);
 
-    boolean existsByEmail(String email);
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM users WHERE email = :email)", nativeQuery = true)
+    boolean emailExists(@Param("email") String email);
 
-    List<User> findByRole(Role role);
+    @Query(value = "SELECT * FROM users WHERE role = :role ORDER BY full_name ASC", nativeQuery = true)
+    List<User> findUsersByRole(@Param("role") Role role);
 
-    long countByRole(Role role);
+    @Query(value = "SELECT COUNT(*) FROM users WHERE role = :role", nativeQuery = true)
+    long countUsersByRole(@Param("role") Role role);
 
-    List<User> findTop5ByOrderByCreatedAtDesc();
+    @Query(value = "SELECT * FROM users ORDER BY created_at DESC LIMIT 5", nativeQuery = true)
+    List<User> findLatestFiveUsers();
 
     @Query(value = "SELECT COUNT(*) FROM users WHERE role != :role AND created_at >= :from AND created_at < :to",
            nativeQuery = true)

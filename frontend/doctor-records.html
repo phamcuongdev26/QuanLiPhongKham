@@ -208,16 +208,14 @@
         ${appt.symptomDescription ? `<span>Triệu chứng: <strong>${appt.symptomDescription}</strong></span>` : ''}
       `;
       // Chỉ khóa nút lưu theo trạng thái — form luôn hiển thị để xem.
-      const canEdit = appt.status !== 'COMPLETED' && appt.status !== 'CANCELED' && appt.status !== 'REJECTED';
+      const canEdit = appt.status !== 'CANCELED' && appt.status !== 'REJECTED';
       if (!canEdit) {
         document.querySelectorAll('#detailView .btn-primary').forEach(btn => btn.disabled = true);
-        if (appt.status === 'COMPLETED') {
-          document.getElementById('alertRecord').textContent = 'Hồ sơ đã hoàn thành.';
-          document.getElementById('alertRecord').className = 'alert alert-success show';
-        } else if (appt.status === 'CANCELED' || appt.status === 'REJECTED') {
-          document.getElementById('alertRecord').textContent = 'Lịch hẹn đã bị hủy/từ chối — không thể cập nhật hồ sơ.';
-          document.getElementById('alertRecord').className = 'alert alert-error show';
-        }
+        document.getElementById('alertRecord').textContent = 'Lịch hẹn đã bị hủy/từ chối — không thể cập nhật hồ sơ.';
+        document.getElementById('alertRecord').className = 'alert alert-error show';
+      } else if (appt.status === 'COMPLETED') {
+        document.getElementById('alertRecord').textContent = 'Hồ sơ đã hoàn thành. Bạn vẫn có thể cập nhật lại hồ sơ nếu cần.';
+        document.getElementById('alertRecord').className = 'alert alert-success show';
       }
     } catch {
       bar.innerHTML = `<span>Lịch hẹn #${appointmentId}</span>`;
@@ -290,7 +288,6 @@
       });
 
       toast('Lưu hồ sơ thành công — lịch hẹn đã hoàn thành');
-      document.querySelectorAll('#detailView .btn-primary').forEach(btn => btn.disabled = true);
       recordAlert.textContent = 'Hồ sơ đã hoàn thành.';
       recordAlert.className = 'alert alert-success show';
     } catch (err) {
