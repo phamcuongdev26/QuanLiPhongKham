@@ -12,7 +12,6 @@ import com.clinic.entity.User;
 import com.clinic.exception.AppException;
 import com.clinic.exception.ErrorCode;
 import com.clinic.entity.DoctorProfile;
-import com.clinic.entity.DoctorWorkShift;
 import com.clinic.repository.AppointmentRepository;
 import com.clinic.repository.DoctorDayOffRepository;
 import com.clinic.repository.DoctorProfileRepository;
@@ -71,8 +70,6 @@ public class AppointmentServiceImpl implements AppointmentService {
         if (request.getEndTime().isBefore(request.getStartTime()) || request.getEndTime().isEqual(request.getStartTime())) {
             throw new AppException(ErrorCode.INVALID_TIME_RANGE);
         }
-
-        // Không cho đặt lịch trong quá khứ
         if (request.getStartTime().isBefore(LocalDateTime.now())) {
             throw new AppException(ErrorCode.INVALID_TIME_RANGE);
         }
@@ -91,28 +88,23 @@ public class AppointmentServiceImpl implements AppointmentService {
         Specialty specialty = specialtyRepository.findById(request.getSpecialtyId())
                 .orElseThrow(() -> new AppException(ErrorCode.SPECIALTY_NOT_FOUND));
 
-        // Kiểm tra bác sĩ thuộc đúng chuyên khoa
         DoctorProfile profile = doctorProfileRepository.findById(doctor.getId())
                 .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
         if (profile.getSpecialty() == null || !profile.getSpecialty().getId().equals(specialty.getId())) {
             throw new AppException(ErrorCode.DOCTOR_NOT_FOUND);
         }
 
-        // Kiểm tra bác sĩ không nghỉ ngày đó
         LocalDate appointmentDate = request.getStartTime().toLocalDate();
         if (doctorDayOffRepository.existsByDoctor_IdAndDayOff(doctor.getId(), appointmentDate)) {
             throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);
         }
 
-        // Kiểm tra slot nằm trong ca làm việc của bác sĩ
-        List<DoctorWorkShift> shifts = doctorWorkShiftRepository
-                .findByDoctor_IdAndIsActiveTrue(doctor.getId())
-                .stream()
-                .filter(s -> s.getDayOfWeek() == appointmentDate.getDayOfWeek())
-                .toList();
-        boolean withinShift = shifts.stream().anyMatch(s ->
-                !request.getStartTime().toLocalTime().isBefore(s.getStartTime()) &&
-                !request.getEndTime().toLocalTime().isAfter(s.getEndTime()));
+        boolean withinShift = doctorWorkShiftRepository.existsShiftCovering(
+                doctor.getId(),
+                appointmentDate.getDayOfWeek().name(),
+                request.getStartTime().toLocalTime(),
+                request.getEndTime().toLocalTime()
+        ) > 0;
         if (!withinShift) {
             throw new AppException(ErrorCode.APPOINTMENT_TIME_UNAVAILABLE);
         }
@@ -253,4 +245,3 @@ public class AppointmentServiceImpl implements AppointmentService {
         return response;
     }
 }
-

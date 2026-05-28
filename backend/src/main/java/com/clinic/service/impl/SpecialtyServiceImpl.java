@@ -30,8 +30,7 @@ public class SpecialtyServiceImpl implements SpecialtyService {
 
     @Override
     public List<SpecialtyResponse> listActive() {
-        return specialtyRepository.findAll().stream()
-                .filter(Specialty::isActive)
+        return specialtyRepository.findByIsActiveTrueOrderByNameAsc().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -79,4 +78,3 @@ public class SpecialtyServiceImpl implements SpecialtyService {
         specialtyRepository.save(specialty);
     }
 }
-

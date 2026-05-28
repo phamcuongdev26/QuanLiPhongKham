@@ -10,6 +10,7 @@ import com.clinic.entity.User;
 import com.clinic.exception.AppException;
 import com.clinic.exception.ErrorCode;
 import com.clinic.repository.DoctorProfileRepository;
+import com.clinic.repository.DoctorProfileRepository.DoctorSummaryProjection;
 import com.clinic.repository.SpecialtyRepository;
 import com.clinic.repository.UserRepository;
 import com.clinic.service.DoctorService;
@@ -43,23 +44,39 @@ public class DoctorServiceImpl implements DoctorService {
                 .build();
     }
 
+    private DoctorSummaryResponse toSummary(DoctorSummaryProjection doctor) {
+        return DoctorSummaryResponse.builder()
+                .id(doctor.getId())
+                .fullName(doctor.getFullName())
+                .email(doctor.getEmail())
+                .specialtyId(doctor.getSpecialtyId())
+                .specialtyName(doctor.getSpecialtyName())
+                .consultationFee(doctor.getConsultationFee())
+                .title(doctor.getTitle())
+                .bio(doctor.getBio())
+                .isActive(Boolean.TRUE.equals(doctor.getIsActive()))
+                .build();
+    }
+
     @Override
     public List<DoctorSummaryResponse> listBySpecialty(Long specialtyId) {
-        return doctorProfileRepository.findBySpecialty_Id(specialtyId).stream()
+        return doctorProfileRepository.findDoctorSummariesBySpecialty(specialtyId).stream()
                 .map(this::toSummary)
                 .toList();
     }
 
     @Override
     public List<DoctorSummaryResponse> listAll() {
-        return doctorProfileRepository.findAll().stream().map(this::toSummary).toList();
+        return doctorProfileRepository.findAllDoctorSummaries().stream()
+                .map(this::toSummary)
+                .toList();
     }
 
     @Override
     public DoctorSummaryResponse getById(Long doctorId) {
-        DoctorProfile profile = doctorProfileRepository.findById(doctorId)
+        return doctorProfileRepository.findDoctorSummaryById(doctorId)
+                .map(this::toSummary)
                 .orElseThrow(() -> new AppException(ErrorCode.DOCTOR_NOT_FOUND));
-        return toSummary(profile);
     }
 
     @Override
@@ -132,4 +149,3 @@ public class DoctorServiceImpl implements DoctorService {
         userRepository.save(user);
     }
 }
-

@@ -75,9 +75,7 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
     public DoctorDayOffResponse addDayOff(String doctorUsername, CreateDayOffRequest request) {
         User doctor = doctor(doctorUsername);
         if (doctorDayOffRepository.existsByDoctor_IdAndDayOff(doctor.getId(), request.getDayOff())) {
-            return doctorDayOffRepository.findByDoctor_Id(doctor.getId()).stream()
-                    .filter(d -> d.getDayOff().equals(request.getDayOff()))
-                    .findFirst()
+            return doctorDayOffRepository.findByDoctor_IdAndDayOff(doctor.getId(), request.getDayOff())
                     .map(d -> DoctorDayOffResponse.builder().id(d.getId()).dayOff(d.getDayOff()).reason(d.getReason()).build())
                     .orElseThrow(() -> new AppException(ErrorCode.INTERNAL_ERROR));
         }
@@ -102,4 +100,3 @@ public class DoctorScheduleServiceImpl implements DoctorScheduleService {
                 .toList();
     }
 }
-

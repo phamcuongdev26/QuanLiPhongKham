@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface DoctorDayOffRepository extends JpaRepository<DoctorDayOff, Long> {
     boolean existsByDoctor_IdAndDayOff(Long doctorId, LocalDate dayOff);
     List<DoctorDayOff> findByDoctor_Id(Long doctorId);
+    Optional<DoctorDayOff> findByDoctor_IdAndDayOff(Long doctorId, LocalDate dayOff);
 }
-

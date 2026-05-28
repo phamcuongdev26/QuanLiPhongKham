@@ -35,11 +35,10 @@ public class AvailabilityServiceImpl implements AvailabilityService {
             return List.of();
         }
 
-        DayOfWeek dow = date.getDayOfWeek();
-        List<DoctorWorkShift> shifts = doctorWorkShiftRepository.findByDoctor_IdAndIsActiveTrue(doctorId).stream()
-                .filter(s -> s.getDayOfWeek() == dow)
-                .toList();
-        if (shifts.isEmpty()) {
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+        List<DoctorWorkShift> workingShifts = doctorWorkShiftRepository
+                .findByDoctor_IdAndDayOfWeekAndIsActiveTrueOrderByStartTimeAsc(doctorId, dayOfWeek);
+        if (workingShifts.isEmpty()) {
             return List.of();
         }
 
@@ -48,26 +47,25 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         List<Appointment> appointments = appointmentRepository
                 .findActiveByDoctorAndDateRange(doctorId, from, to);
 
-        List<TimeSlotResponse> slots = new ArrayList<>();
-        for (DoctorWorkShift shift : shifts) {
+        List<TimeSlotResponse> availableSlots = new ArrayList<>();
+        for (DoctorWorkShift shift : workingShifts) {
             LocalDateTime cursor = LocalDateTime.of(date, shift.getStartTime());
             LocalDateTime shiftEnd = LocalDateTime.of(date, shift.getEndTime());
             while (!cursor.plusMinutes(minutes).isAfter(shiftEnd)) {
-                LocalDateTime end = cursor.plusMinutes(minutes);
+                LocalDateTime slotEnd = cursor.plusMinutes(minutes);
                 boolean overlap = false;
                 for (Appointment a : appointments) {
-                    if (a.getStartTime().isBefore(end) && a.getEndTime().isAfter(cursor)) {
+                    if (a.getStartTime().isBefore(slotEnd) && a.getEndTime().isAfter(cursor)) {
                         overlap = true;
                         break;
                     }
                 }
                 if (!overlap) {
-                    slots.add(TimeSlotResponse.builder().startTime(cursor).endTime(end).build());
+                    availableSlots.add(TimeSlotResponse.builder().startTime(cursor).endTime(slotEnd).build());
                 }
-                cursor = end;
+                cursor = slotEnd;
             }
         }
-        return slots;
+        return availableSlots;
     }
 }
-

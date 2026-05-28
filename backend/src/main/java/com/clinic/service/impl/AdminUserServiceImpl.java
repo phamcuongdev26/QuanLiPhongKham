@@ -9,18 +9,12 @@ import com.clinic.exception.AppException;
 import com.clinic.exception.ErrorCode;
 import com.clinic.repository.UserRepository;
 import com.clinic.service.AdminUserService;
-import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -44,31 +38,13 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     public PageResponse<AdminUserResponse> getUsers(int page, int size, String q, String role, String status) {
-        Specification<User> spec = (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            if (q != null && !q.isBlank()) {
-                String like = "%" + q.toLowerCase() + "%";
-                predicates.add(cb.or(
-                        cb.like(cb.lower(root.get("username")), like),
-                        cb.like(cb.lower(root.get("email")), like),
-                        cb.like(cb.lower(root.get("fullName")), like)
-                ));
-            }
-            if (role != null && !role.isBlank()) {
-                try {
-                    predicates.add(cb.equal(root.get("role"), Role.valueOf(role)));
-                } catch (IllegalArgumentException ignored) {}
-            }
-            if ("active".equalsIgnoreCase(status)) {
-                predicates.add(cb.isTrue(root.get("isActive")));
-            } else if ("inactive".equalsIgnoreCase(status)) {
-                predicates.add(cb.isFalse(root.get("isActive")));
-            }
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
+        String keyword = (q == null || q.isBlank()) ? null : q.trim();
+        String roleFilter = (role == null || role.isBlank()) ? null : role.trim().toUpperCase();
+        Boolean activeFilter = "active".equalsIgnoreCase(status) ? Boolean.TRUE
+                             : "inactive".equalsIgnoreCase(status) ? Boolean.FALSE
+                            : null;
 
-        Page<User> result = userRepository.findAll(spec,
-                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        Page<User> result = userRepository.findFiltered(keyword, roleFilter, activeFilter, PageRequest.of(page, size));
         return PageResponse.<AdminUserResponse>builder()
                 .content(result.getContent().stream().map(this::toResponse).toList())
                 .page(result.getNumber())
