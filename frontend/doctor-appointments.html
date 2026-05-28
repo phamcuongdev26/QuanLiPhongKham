@@ -181,8 +181,8 @@
     const status = document.getElementById('statusSelect').value;
     const doctorNote = document.getElementById('doctorNote').value.trim() || null;
     try {
-      const res = await fetch(`${API}/api/appointments/${currentApptId}/status`, {
-        method: 'PUT',
+      const res = await fetch(`${API}/api/doctor/appointments/${currentApptId}/status`, {
+        method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify({ status, doctorNote })
       });
