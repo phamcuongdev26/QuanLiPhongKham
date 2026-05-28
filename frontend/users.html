@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản lý Khách hàng - Phòng Khám</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .inactive-user-row td:not(:last-child) { opacity: .62; }
+    .inactive-user-row .actions .btn-info {
+      opacity: 1;
+      background: var(--info);
+      color: var(--white);
+      box-shadow: 0 1px 4px rgba(41, 128, 185, .28);
+    }
+  </style>
 </head>
 <body>
 <div class="layout">
@@ -197,7 +206,7 @@
     empty.style.display = 'none';
     const offset = (page.page || 0) * PAGE_SIZE;
     tbody.innerHTML = users.map((u, i) => `
-      <tr style="${!u.isActive ? 'opacity:.6;' : ''}">
+      <tr class="${!u.isActive ? 'inactive-user-row' : ''}">
         <td>${offset + i + 1}</td>
         <td><strong>${escHtml(u.username)}</strong></td>
         <td>${escHtml(u.fullName) || '-'}</td>
